@@ -1,5 +1,6 @@
 use crate::repository::Repository;
 use indextree::NodeId;
+use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
 type Itemset = Vec<u32>;
@@ -230,16 +231,29 @@ impl Apriori {
             println!("Prune step");
             let unpruned_candidates = self.prune_step(&large_itemsets[&(k - 1)], &candidates);
 
-            // Calculate support for candidates
-            println!("Calculating support for candidates");
-            let mut itemsets_k = HashMap::new();
-            for candidate in unpruned_candidates {
-                let support_count = self.calculate_support(&candidate);
+            // Calculate support for candidates (parallelized with chunking)
+            println!(
+                "Calculating support for {} candidates",
+                unpruned_candidates.len()
+            );
 
-                if support_count >= min_support_count {
-                    itemsets_k.insert(candidate, support_count);
-                }
-            }
+            // Use chunked parallel iteration for better cache locality and reduced overhead
+            // Chunk size adapts based on number of candidates
+            let chunk_size =
+                (unpruned_candidates.len() / (rayon::current_num_threads() * 4)).max(1);
+
+            let itemsets_k: HashMap<Itemset, u32> = unpruned_candidates
+                .par_chunks(chunk_size)
+                .flat_map(|chunk| {
+                    chunk
+                        .iter()
+                        .filter_map(|candidate| {
+                            self.calculate_support_with_min(candidate, min_support_count)
+                                .map(|count| (candidate.clone(), count))
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect();
 
             if itemsets_k.is_empty() {
                 break;
@@ -308,67 +322,159 @@ impl Apriori {
     }
 
     fn prune_step(&self, itemmap: &HashMap<Itemset, u32>, candidates: &[Itemset]) -> Vec<Itemset> {
-        let mut unpruned = Vec::with_capacity(candidates.len());
+        // Parallelize pruning for large candidate sets
+        if candidates.len() < 100 {
+            // Sequential for small sets (less overhead)
+            let mut unpruned = Vec::with_capacity(candidates.len());
 
-        for candidate in candidates {
-            // Check all k-1 subsets (excluding last two items which are guaranteed by join_step)
-            let mut should_keep = true;
-            let candidate_len = candidate.len();
+            for candidate in candidates {
+                // Check all k-1 subsets (excluding last two items which are guaranteed by join_step)
+                let mut should_keep = true;
+                let candidate_len = candidate.len();
 
-            // Only check first k-2 subsets (last two are guaranteed by join_step)
-            for i in 0..(candidate_len.saturating_sub(2)) {
-                // Build subset more efficiently without concat
-                let mut subset = Vec::with_capacity(candidate_len - 1);
-                subset.extend_from_slice(&candidate[..i]);
-                subset.extend_from_slice(&candidate[i + 1..]);
+                // Only check first k-2 subsets (last two are guaranteed by join_step)
+                for i in 0..(candidate_len.saturating_sub(2)) {
+                    // Build subset more efficiently without concat
+                    let mut subset = Vec::with_capacity(candidate_len - 1);
+                    subset.extend_from_slice(&candidate[..i]);
+                    subset.extend_from_slice(&candidate[i + 1..]);
 
-                if !itemmap.contains_key(&subset) {
-                    should_keep = false;
-                    break;
+                    if !itemmap.contains_key(&subset) {
+                        should_keep = false;
+                        break;
+                    }
+                }
+
+                if should_keep {
+                    unpruned.push(candidate.clone());
                 }
             }
 
-            if should_keep {
-                unpruned.push(candidate.clone());
-            }
-        }
+            unpruned
+        } else {
+            // Parallel for large sets
+            candidates
+                .par_iter()
+                .filter(|candidate| {
+                    let candidate_len = candidate.len();
 
-        unpruned
+                    // Check all k-1 subsets (excluding last two items which are guaranteed by join_step)
+                    for i in 0..(candidate_len.saturating_sub(2)) {
+                        let mut subset = Vec::with_capacity(candidate_len - 1);
+                        subset.extend_from_slice(&candidate[..i]);
+                        subset.extend_from_slice(&candidate[i + 1..]);
+
+                        if !itemmap.contains_key(&subset) {
+                            return false;
+                        }
+                    }
+                    true
+                })
+                .cloned()
+                .collect()
+        }
     }
 
+    #[inline]
     fn calculate_support(&self, itemset: &Itemset) -> u32 {
         if itemset.is_empty() {
             return 0;
         }
 
-        // Get first node's bitmap
-        let first_node_id = match self.repository.node_by_id.get(&itemset[0]) {
-            Some(&node_id) => node_id,
-            None => return 0,
-        };
-
-        // Use reference to first bitmap and clone only when needed
-        let first_bitmap = &self.repository.arena[first_node_id].get().bitmap;
-
         // If only one item, return its support directly
         if itemset.len() == 1 {
-            return first_bitmap.len() as u32;
+            let node_id = match self.repository.node_by_id.get(&itemset[0]) {
+                Some(&node_id) => node_id,
+                None => return 0,
+            };
+            return self.repository.arena[node_id].get().bitmap.len() as u32;
         }
 
-        // Clone only when we need to intersect with other bitmaps
-        let mut result = first_bitmap.clone();
-
-        // Intersect with other nodes
-        for &item_id in &itemset[1..] {
+        // Collect all bitmaps and sort by size (smallest first) for faster intersection
+        let mut bitmaps: Vec<&roaring::RoaringBitmap> = Vec::with_capacity(itemset.len());
+        for &item_id in itemset {
             let node_id = match self.repository.node_by_id.get(&item_id) {
                 Some(&node_id) => node_id,
                 None => return 0,
             };
-            let node = self.repository.arena[node_id].get();
-            result &= &node.bitmap;
+            bitmaps.push(&self.repository.arena[node_id].get().bitmap);
+        }
+
+        // Sort by bitmap size (smallest first) to minimize intersection cost
+        bitmaps.sort_by_key(|b| b.len());
+
+        // Start with the smallest bitmap
+        let mut result = bitmaps[0].clone();
+
+        // Intersect with other bitmaps
+        for &bitmap in &bitmaps[1..] {
+            result &= bitmap;
+            // Early exit if result becomes empty
+            if result.is_empty() {
+                return 0;
+            }
         }
 
         result.len() as u32
+    }
+
+    // Optimized version with early termination for minimum support
+    #[inline]
+    fn calculate_support_with_min(&self, itemset: &Itemset, min_support_count: u32) -> Option<u32> {
+        if itemset.is_empty() {
+            return None;
+        }
+
+        // If only one item, return its support directly
+        if itemset.len() == 1 {
+            let node_id = match self.repository.node_by_id.get(&itemset[0]) {
+                Some(&node_id) => node_id,
+                None => return None,
+            };
+            let count = self.repository.arena[node_id].get().bitmap.len() as u32;
+            return if count >= min_support_count {
+                Some(count)
+            } else {
+                None
+            };
+        }
+
+        // Collect all bitmaps and sort by size (smallest first)
+        let mut bitmaps: Vec<&roaring::RoaringBitmap> = Vec::with_capacity(itemset.len());
+        for &item_id in itemset {
+            let node_id = match self.repository.node_by_id.get(&item_id) {
+                Some(&node_id) => node_id,
+                None => return None,
+            };
+            let bitmap = &self.repository.arena[node_id].get().bitmap;
+            // Early exit if any bitmap is too small
+            if (bitmap.len() as u32) < min_support_count {
+                return None;
+            }
+            bitmaps.push(bitmap);
+        }
+
+        // Sort by bitmap size (smallest first)
+        bitmaps.sort_by_key(|b| b.len());
+
+        // Start with the smallest bitmap
+        let mut result = bitmaps[0].clone();
+
+        // Intersect with other bitmaps
+        for &bitmap in &bitmaps[1..] {
+            result &= bitmap;
+            // Early exit if below threshold
+            if (result.len() as u32) < min_support_count {
+                return None;
+            }
+        }
+
+        let count = result.len() as u32;
+        if count >= min_support_count {
+            Some(count)
+        } else {
+            None
+        }
     }
 
     fn generate_rules(
@@ -376,48 +482,68 @@ impl Apriori {
         itemsets: &HashMap<usize, HashMap<Itemset, u32>>,
         min_confidence: f64,
     ) -> Vec<Rule> {
-        let mut rules = Vec::new();
+        // Flatten itemsets into a single vec for better parallelization
+        let all_itemsets: Vec<(&Itemset, u32)> = itemsets
+            .iter()
+            .filter(|(&size, _)| size >= 2)
+            .flat_map(|(_, itemsets_map)| {
+                itemsets_map
+                    .iter()
+                    .map(|(itemset, &count)| (itemset, count))
+            })
+            .collect();
 
-        // For each size >= 2
-        for (&size, itemsets_map) in itemsets.iter() {
-            if size < 2 {
-                continue;
-            }
+        println!(
+            "Generating rules from {} itemsets in parallel",
+            all_itemsets.len()
+        );
 
-            for (itemset, &count_full) in itemsets_map.iter() {
-                // Try single-item consequents
-                let mut h_1 = Vec::with_capacity(itemset.len());
+        // Parallelize across all itemsets with chunking for better load balancing
+        let chunk_size = (all_itemsets.len() / (rayon::current_num_threads() * 2)).max(1);
 
-                for i in 0..itemset.len() {
-                    // Build LHS more efficiently
-                    let mut lhs = Vec::with_capacity(itemset.len() - 1);
-                    lhs.extend_from_slice(&itemset[..i]);
-                    lhs.extend_from_slice(&itemset[i + 1..]);
-                    // lhs is already sorted if itemset is sorted
+        all_itemsets
+            .par_chunks(chunk_size)
+            .flat_map(|chunk| {
+                let mut chunk_rules = Vec::new();
 
-                    let count_lhs = self.calculate_support(&lhs);
-                    let confidence = count_full as f64 / count_lhs as f64;
+                for (itemset, count_full) in chunk {
+                    let mut local_rules = Vec::new();
+                    let mut h_1 = Vec::with_capacity(itemset.len());
 
-                    if confidence >= min_confidence {
-                        let rhs = vec![itemset[i]];
-                        rules.push(Rule {
-                            lhs: lhs.clone(),
-                            rhs: rhs.clone(),
-                            count_full,
-                            count_lhs,
-                            num_transactions: self.repository.transaction_count,
-                        });
-                        h_1.push(rhs);
+                    // Try single-item consequents
+                    for i in 0..itemset.len() {
+                        // Build LHS more efficiently
+                        let mut lhs = Vec::with_capacity(itemset.len() - 1);
+                        lhs.extend_from_slice(&itemset[..i]);
+                        lhs.extend_from_slice(&itemset[i + 1..]);
+                        // lhs is already sorted if itemset is sorted
+
+                        let count_lhs = self.calculate_support(&lhs);
+                        let confidence = *count_full as f64 / count_lhs as f64;
+
+                        if confidence >= min_confidence {
+                            let rhs = vec![itemset[i]];
+                            local_rules.push(Rule {
+                                lhs: lhs.clone(),
+                                rhs: rhs.clone(),
+                                count_full: *count_full,
+                                count_lhs,
+                                num_transactions: self.repository.transaction_count,
+                            });
+                            h_1.push(rhs);
+                        }
                     }
+
+                    if h_1.len() >= 2 {
+                        self.ap_genrules(itemset, &h_1, itemsets, min_confidence, &mut local_rules);
+                    }
+
+                    chunk_rules.extend(local_rules);
                 }
 
-                if h_1.len() >= 2 {
-                    self.ap_genrules(itemset, &h_1, itemsets, min_confidence, &mut rules);
-                }
-            }
-        }
-
-        rules
+                chunk_rules
+            })
+            .collect()
     }
 
     fn ap_genrules(

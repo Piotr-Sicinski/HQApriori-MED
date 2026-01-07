@@ -4,7 +4,15 @@ pub mod repository;
 use apriori::{Apriori, LevelConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("HQApriori - Multi-level Association Rule Mining\n");
+    // Configure Rayon to use all available cores
+    let num_cpus = num_cpus::get();
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(num_cpus)
+        .build_global()
+        .unwrap();
+
+    println!("HQApriori - Multi-level Association Rule Mining");
+    println!("Using {} threads for parallel processing\n", num_cpus);
 
     // Example configuration
     use std::collections::HashMap;
@@ -40,7 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // )?;
 
     let mut apriori = Apriori::new(
-        "datasets/instacart_trainFIM-tiny.txt",
+        "datasets/instacart_trainFIM.txt",
+        // "datasets/instacart_priorFIM.txt",
         "datasets/instacart_taxonomy.txt",
         configs,
     )?;
