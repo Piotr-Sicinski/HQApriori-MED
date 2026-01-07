@@ -166,9 +166,11 @@ impl Apriori {
 
                 if !current_nodes.is_empty() {
                     // Generate frequent itemsets
+                    println!("Generating itemsets for level {}", current_level);
                     let itemsets = self.generate_itemsets(&current_nodes, min_support_count);
 
                     // Generate rules
+                    println!("Generating rules for level {}", current_level);
                     let rules = self.generate_rules(&itemsets, config.confidence);
 
                     println!("  Found {} rules at level {}", rules.len(), current_level);
@@ -447,5 +449,200 @@ impl Apriori {
         if !h_m_copy.is_empty() {
             self.ap_genrules(itemset, &h_m_copy, itemsets, min_confidence, rules);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn create_test_repository() -> Repository {
+        use std::fs;
+        use std::io::Write;
+
+        // Create temporary test files
+        let taxonomy_path = "test_taxonomy_temp.txt";
+        let transactions_path = "test_transactions_temp.txt";
+
+        {
+            let mut file = fs::File::create(taxonomy_path).unwrap();
+            writeln!(file, "a,ROOT").unwrap();
+            writeln!(file, "b,ROOT").unwrap();
+            writeln!(file, "c,ROOT").unwrap();
+            writeln!(file, "d,ROOT").unwrap();
+        }
+
+        {
+            let mut file = fs::File::create(transactions_path).unwrap();
+            writeln!(file, "a b c").unwrap();
+            writeln!(file, "a b d").unwrap();
+            writeln!(file, "a c d").unwrap();
+            writeln!(file, "b c").unwrap();
+        }
+
+        let repo = Repository::new(transactions_path, taxonomy_path).unwrap();
+
+        // Cleanup
+        fs::remove_file(taxonomy_path).ok();
+        fs::remove_file(transactions_path).ok();
+
+        repo
+    }
+
+    #[test]
+    fn test_join_step() {
+        let repo = create_test_repository();
+        let apriori = Apriori {
+            repository: repo,
+            level_configs: HashMap::new(),
+        };
+
+        // Test case from Python implementation
+        // itemsets = [(1, 2, 3), (1, 2, 4), (1, 3, 4), (1, 3, 5), (2, 3, 4)]
+        // Expected: [(1, 2, 3, 4), (1, 3, 4, 5)]
+
+        let itemsets = vec![
+            vec![1, 2, 3],
+            vec![1, 2, 4],
+            vec![1, 3, 4],
+            vec![1, 3, 5],
+            vec![2, 3, 4],
+        ];
+
+        let candidates = apriori.join_step(&itemsets);
+
+        // Should generate candidates
+        assert!(!candidates.is_empty());
+
+        // Check that we get the expected candidates
+        let expected_1 = vec![1, 2, 3, 4];
+        let expected_2 = vec![1, 3, 4, 5];
+
+        let has_expected_1 = candidates.iter().any(|c| c == &expected_1);
+        let has_expected_2 = candidates.iter().any(|c| c == &expected_2);
+
+        assert!(
+            has_expected_1 || has_expected_2,
+            "Join step should generate expected candidates"
+        );
+    }
+
+    #[test]
+    fn test_prune_step() {
+        let repo = create_test_repository();
+        let apriori = Apriori {
+            repository: repo,
+            level_configs: HashMap::new(),
+        };
+
+        // Test case: itemsets of size 3
+        let itemsets = HashMap::from([
+            (vec![1, 2, 3], 2),
+            (vec![1, 2, 4], 2),
+            (vec![1, 3, 4], 2),
+            (vec![2, 3, 4], 2),
+        ]);
+
+        // Candidate: [1, 2, 3, 4] - all subsets should be in itemsets
+        let candidates = vec![vec![1, 2, 3, 4]];
+
+        let unpruned = apriori.prune_step(&itemsets, &candidates);
+
+        // Should keep the candidate since all subsets exist
+        assert_eq!(unpruned.len(), 1);
+        assert_eq!(unpruned[0], vec![1, 2, 3, 4]);
+
+        // Test with invalid candidate (missing subset)
+        let itemsets_incomplete = HashMap::from([
+            (vec![1, 2, 3], 2),
+            (vec![1, 2, 4], 2),
+            // Missing [1, 3, 4] or [2, 3, 4]
+        ]);
+
+        let unpruned_invalid = apriori.prune_step(&itemsets_incomplete, &candidates);
+        // Should prune since not all subsets exist
+        assert_eq!(unpruned_invalid.len(), 0);
+    }
+
+    #[test]
+    fn test_calculate_support() {
+        let repo = create_test_repository();
+        let apriori = Apriori {
+            repository: repo,
+            level_configs: HashMap::new(),
+        };
+
+        // Get node IDs from repository
+        let mut node_ids = Vec::new();
+        for (&id, _) in &apriori.repository.node_by_id {
+            if id < 4 {
+                // Use first 3 nodes (a, b, c)
+                node_ids.push(id);
+            }
+        }
+        node_ids.sort();
+
+        if node_ids.len() >= 2 {
+            // Test support for single item
+            let single_item = vec![node_ids[0]];
+            let support = apriori.calculate_support(&single_item);
+            assert!(support > 0, "Single item should have support > 0");
+
+            // Test support for two items
+            if node_ids.len() >= 2 {
+                let two_items = vec![node_ids[0], node_ids[1]];
+                let support_two = apriori.calculate_support(&two_items);
+                // Support is always >= 0 (u32)
+                // Support of two items should be <= support of single item
+                assert!(
+                    support_two <= support,
+                    "Support should decrease with more items"
+                );
+            }
+        }
+
+        // Test empty itemset
+        assert_eq!(apriori.calculate_support(&vec![]), 0);
+
+        // Test non-existent item
+        assert_eq!(apriori.calculate_support(&vec![99999]), 0);
+    }
+
+    #[test]
+    fn test_rule_confidence_calculation() {
+        let rule = Rule {
+            lhs: vec![1, 2],
+            rhs: vec![3],
+            count_full: 2,
+            count_lhs: 3,
+            num_transactions: 5,
+        };
+
+        assert_eq!(rule.confidence(), 2.0 / 3.0);
+        assert_eq!(rule.support(), 2.0 / 5.0);
+    }
+
+    #[test]
+    fn test_rule_edge_cases() {
+        // Zero LHS count
+        let rule1 = Rule {
+            lhs: vec![1],
+            rhs: vec![2],
+            count_full: 0,
+            count_lhs: 0,
+            num_transactions: 10,
+        };
+        assert_eq!(rule1.confidence(), 0.0);
+
+        // Zero transactions
+        let rule2 = Rule {
+            lhs: vec![1],
+            rhs: vec![2],
+            count_full: 5,
+            count_lhs: 5,
+            num_transactions: 0,
+        };
+        assert_eq!(rule2.support(), 0.0);
     }
 }

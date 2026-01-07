@@ -3,6 +3,10 @@ name = "hqapriori"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "hqapriori"
+path = "src/lib.rs"
+
 [dependencies]
 roaring = "0.10"
 indextree = "4.7"

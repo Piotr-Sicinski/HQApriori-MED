@@ -271,3 +271,100 @@ impl Repository {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io::Write;
+
+    fn create_test_taxonomy() -> String {
+        let path = "test_taxonomy_temp.txt";
+        let mut file = fs::File::create(path).unwrap();
+        writeln!(file, "a,ROOT").unwrap();
+        writeln!(file, "b,ROOT").unwrap();
+        writeln!(file, "c,ROOT").unwrap();
+        writeln!(file, "d,ROOT").unwrap();
+        path.to_string()
+    }
+
+    fn create_test_transactions() -> String {
+        let path = "test_transactions_temp.txt";
+        let mut file = fs::File::create(path).unwrap();
+        writeln!(file, "a b c").unwrap();
+        writeln!(file, "a b d").unwrap();
+        writeln!(file, "a c d").unwrap();
+        writeln!(file, "b c").unwrap();
+        writeln!(file, "b d").unwrap();
+        path.to_string()
+    }
+
+    #[test]
+    fn test_repository_creation() {
+        let taxonomy_path = create_test_taxonomy();
+        let transactions_path = create_test_transactions();
+
+        let repo = Repository::new(&transactions_path, &taxonomy_path).unwrap();
+
+        assert_eq!(repo.transaction_count, 5);
+        assert!(repo.node_by_id.len() > 0);
+
+        // Cleanup
+        fs::remove_file(taxonomy_path).ok();
+        fs::remove_file(transactions_path).ok();
+    }
+
+    #[test]
+    fn test_repository_empty_transactions() {
+        let taxonomy_path = create_test_taxonomy();
+        let empty_path = "test_empty_temp.txt";
+        fs::File::create(empty_path).unwrap();
+
+        let repo = Repository::new(empty_path, &taxonomy_path).unwrap();
+
+        assert_eq!(repo.transaction_count, 0);
+
+        // Cleanup
+        fs::remove_file(taxonomy_path).ok();
+        fs::remove_file(empty_path).ok();
+    }
+
+    #[test]
+    fn test_repository_get_children() {
+        let taxonomy_path = create_test_taxonomy();
+        let transactions_path = create_test_transactions();
+
+        let repo = Repository::new(&transactions_path, &taxonomy_path).unwrap();
+
+        let root_children: HashSet<NodeId> = repo.root.children(&repo.arena).collect();
+        let children = repo.get_children(&root_children);
+
+        // In a flat taxonomy, root's children are leaf nodes,
+        // and get_children returns their children (which would be empty for leaves)
+        // So this test just verifies the function doesn't panic
+        let _children_count = children.len();
+
+        // Cleanup
+        fs::remove_file(taxonomy_path).ok();
+        fs::remove_file(transactions_path).ok();
+    }
+
+    #[test]
+    fn test_bitmap_propagation() {
+        let taxonomy_path = create_test_taxonomy();
+        let transactions_path = create_test_transactions();
+
+        let repo = Repository::new(&transactions_path, &taxonomy_path).unwrap();
+
+        // Check that root node has bitmap (propagated from children)
+        let root_node = repo.arena[repo.root].get();
+        assert!(
+            root_node.bitmap.len() > 0,
+            "Root should have propagated bitmap"
+        );
+
+        // Cleanup
+        fs::remove_file(taxonomy_path).ok();
+        fs::remove_file(transactions_path).ok();
+    }
+}
