@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // )?;
 
     let mut apriori = Apriori::new(
-        "datasets/instacart_trainFIM.txt",
+        "datasets/instacart_trainFIM-tiny.txt",
         "datasets/instacart_taxonomy.txt",
         configs,
     )?;

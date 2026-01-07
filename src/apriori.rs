@@ -37,27 +37,27 @@ impl Rule {
     }
 
     pub fn print(&self, repository: &Repository) {
-        // Convert LHS IDs to names
-        let lhs_names: Vec<String> = self
+        // Convert LHS IDs to names (avoid unnecessary clones by using references)
+        let lhs_names: Vec<&str> = self
             .lhs
             .iter()
             .filter_map(|&id| {
                 repository
                     .node_by_id
                     .get(&id)
-                    .map(|&node_id| repository.arena[node_id].get().name.clone())
+                    .map(|&node_id| repository.arena[node_id].get().name.as_str())
             })
             .collect();
 
         // Convert RHS IDs to names
-        let rhs_names: Vec<String> = self
+        let rhs_names: Vec<&str> = self
             .rhs
             .iter()
             .filter_map(|&id| {
                 repository
                     .node_by_id
                     .get(&id)
-                    .map(|&node_id| repository.arena[node_id].get().name.clone())
+                    .map(|&node_id| repository.arena[node_id].get().name.as_str())
             })
             .collect();
 
@@ -148,20 +148,21 @@ impl Apriori {
                 let min_support_count =
                     (config.support * self.repository.transaction_count as f64) as u32;
 
-                // Collect nodes to remove (can't modify while iterating)
-                let nodes_to_remove: Vec<NodeId> = current_nodes
-                    .iter()
-                    .filter(|&&node_id| {
-                        let node = self.repository.arena[node_id].get();
-                        (node.bitmap.len() as u32) < min_support_count
-                    })
-                    .cloned()
-                    .collect();
-
                 // Remove nodes with insufficient support
+                // Use retain for better performance than collect+remove
+                let mut nodes_to_remove = Vec::new();
+                current_nodes.retain(|&node_id| {
+                    let node = self.repository.arena[node_id].get();
+                    let should_keep = (node.bitmap.len() as u32) >= min_support_count;
+                    if !should_keep {
+                        nodes_to_remove.push(node_id);
+                    }
+                    should_keep
+                });
+
+                // Remove subtrees after filtering
                 for node_id in nodes_to_remove {
                     node_id.remove_subtree(&mut self.repository.arena);
-                    current_nodes.remove(&node_id);
                 }
 
                 if !current_nodes.is_empty() {
@@ -195,6 +196,7 @@ impl Apriori {
         let mut large_itemsets: HashMap<usize, HashMap<Itemset, u32>> = HashMap::new();
 
         // Generate 1-itemsets
+        println!("Generating 1-itemsets");
         let mut itemsets_1 = HashMap::new();
         for node_id in nodes.iter() {
             let node = self.repository.arena[*node_id].get();
@@ -214,17 +216,22 @@ impl Apriori {
         // Generate k-itemsets for k >= 2
         let mut k = 2;
         while large_itemsets.contains_key(&(k - 1)) {
-            let prev_itemsets: Vec<Itemset> = large_itemsets[&(k - 1)].keys().cloned().collect();
-            let mut sorted_itemsets = prev_itemsets;
+            println!("Generating k-itemsets for k = {}", k);
+            // Collect and sort more efficiently
+            let mut sorted_itemsets: Vec<Itemset> =
+                large_itemsets[&(k - 1)].keys().cloned().collect();
             sorted_itemsets.sort();
 
             // Join step
+            println!("Joining step");
             let candidates = self.join_step(&sorted_itemsets);
 
             // Prune step
+            println!("Prune step");
             let unpruned_candidates = self.prune_step(&large_itemsets[&(k - 1)], &candidates);
 
             // Calculate support for candidates
+            println!("Calculating support for candidates");
             let mut itemsets_k = HashMap::new();
             for candidate in unpruned_candidates {
                 let support_count = self.calculate_support(&candidate);
@@ -254,7 +261,8 @@ impl Apriori {
             let prefix_i = &itemset_i[..itemset_i.len() - 1];
             let last_i = itemset_i[itemset_i.len() - 1];
 
-            let mut tail_items = vec![last_i];
+            let mut tail_items = Vec::with_capacity(n - i);
+            tail_items.push(last_i);
 
             for j in (i + 1)..n {
                 let itemset_j = &itemsets[j];
@@ -269,9 +277,11 @@ impl Apriori {
             }
 
             // Generate candidates from tail items
-            for a_idx in 0..tail_items.len() {
-                for b_idx in (a_idx + 1)..tail_items.len() {
-                    let mut candidate = prefix_i.to_vec();
+            let tail_len = tail_items.len();
+            for a_idx in 0..tail_len {
+                for b_idx in (a_idx + 1)..tail_len {
+                    let mut candidate = Vec::with_capacity(prefix_i.len() + 2);
+                    candidate.extend_from_slice(prefix_i);
                     candidate.push(tail_items[a_idx]);
                     candidate.push(tail_items[b_idx]);
                     candidates.push(candidate);
@@ -282,18 +292,20 @@ impl Apriori {
         candidates
     }
 
-    fn prune_step(
-        &self,
-        itemmap: &HashMap<Itemset, u32>,
-        candidates: &Vec<Itemset>,
-    ) -> Vec<Itemset> {
-        let mut unpruned = Vec::new();
+    fn prune_step(&self, itemmap: &HashMap<Itemset, u32>, candidates: &[Itemset]) -> Vec<Itemset> {
+        let mut unpruned = Vec::with_capacity(candidates.len());
 
         for candidate in candidates {
-            // Check all k-1 subsets
+            // Check all k-1 subsets (excluding last two items which are guaranteed by join_step)
             let mut should_keep = true;
-            for i in 0..((*candidate).len() - 2) {
-                let subset = [&candidate[..i], &candidate[i + 1..]].concat();
+            let candidate_len = candidate.len();
+
+            // Only check first k-2 subsets (last two are guaranteed by join_step)
+            for i in 0..(candidate_len.saturating_sub(2)) {
+                // Build subset more efficiently without concat
+                let mut subset = Vec::with_capacity(candidate_len - 1);
+                subset.extend_from_slice(&candidate[..i]);
+                subset.extend_from_slice(&candidate[i + 1..]);
 
                 if !itemmap.contains_key(&subset) {
                     should_keep = false;
@@ -315,24 +327,30 @@ impl Apriori {
         }
 
         // Get first node's bitmap
-        let first_node_id = self.repository.node_by_id.get(&itemset[0]);
-        if first_node_id.is_none() {
-            return 0;
+        let first_node_id = match self.repository.node_by_id.get(&itemset[0]) {
+            Some(&node_id) => node_id,
+            None => return 0,
+        };
+
+        // Use reference to first bitmap and clone only when needed
+        let first_bitmap = &self.repository.arena[first_node_id].get().bitmap;
+
+        // If only one item, return its support directly
+        if itemset.len() == 1 {
+            return first_bitmap.len() as u32;
         }
 
-        let mut result = self.repository.arena[*first_node_id.unwrap()]
-            .get()
-            .bitmap
-            .clone();
+        // Clone only when we need to intersect with other bitmaps
+        let mut result = first_bitmap.clone();
 
         // Intersect with other nodes
         for &item_id in &itemset[1..] {
-            if let Some(&node_id) = self.repository.node_by_id.get(&item_id) {
-                let node = self.repository.arena[node_id].get();
-                result &= &node.bitmap;
-            } else {
-                return 0;
-            }
+            let node_id = match self.repository.node_by_id.get(&item_id) {
+                Some(&node_id) => node_id,
+                None => return 0,
+            };
+            let node = self.repository.arena[node_id].get();
+            result &= &node.bitmap;
         }
 
         result.len() as u32
@@ -353,22 +371,20 @@ impl Apriori {
 
             for (itemset, &count_full) in itemsets_map.iter() {
                 // Try single-item consequents
-                let mut h_1 = Vec::new();
+                let mut h_1 = Vec::with_capacity(itemset.len());
 
                 for i in 0..itemset.len() {
-                    let rhs = vec![itemset[i]];
-                    let mut lhs: Itemset = itemset
-                        .iter()
-                        .enumerate()
-                        .filter(|(idx, _)| *idx != i)
-                        .map(|(_, &val)| val)
-                        .collect();
-                    lhs.sort();
+                    // Build LHS more efficiently
+                    let mut lhs = Vec::with_capacity(itemset.len() - 1);
+                    lhs.extend_from_slice(&itemset[..i]);
+                    lhs.extend_from_slice(&itemset[i + 1..]);
+                    // lhs is already sorted if itemset is sorted
 
                     let count_lhs = self.calculate_support(&lhs);
                     let confidence = count_full as f64 / count_lhs as f64;
 
                     if confidence >= min_confidence {
+                        let rhs = vec![itemset[i]];
                         rules.push(Rule {
                             lhs: lhs.clone(),
                             rhs: rhs.clone(),
@@ -402,9 +418,12 @@ impl Apriori {
         }
 
         // Generate larger consequents
-        let mut sorted_h_m: Vec<Itemset> = h_m.to_vec();
-        for h in &mut sorted_h_m {
-            h.sort();
+        // Pre-allocate and sort more efficiently
+        let mut sorted_h_m: Vec<Itemset> = Vec::with_capacity(h_m.len());
+        for h in h_m {
+            let mut sorted_h = h.clone();
+            sorted_h.sort();
+            sorted_h_m.push(sorted_h);
         }
         sorted_h_m.sort();
 
@@ -417,19 +436,43 @@ impl Apriori {
             return;
         }
 
-        let mut h_m_copy = Vec::new();
+        let mut h_m_copy = Vec::with_capacity(h_m_next.len());
+        let itemset_len = itemset.len();
 
         for rhs in &h_m_next {
-            let itemset_set: HashSet<u32> = itemset.iter().cloned().collect();
-            let rhs_set: HashSet<u32> = rhs.iter().cloned().collect();
-            let lhs_set: HashSet<u32> = itemset_set.difference(&rhs_set).cloned().collect();
-            let mut lhs: Itemset = lhs_set.into_iter().collect();
-            lhs.sort();
+            // Build LHS more efficiently without HashSet conversion
+            // Since itemset and rhs are sorted, we can use a merge-like approach
+            let mut lhs = Vec::with_capacity(itemset_len - rhs.len());
+            let mut itemset_idx = 0;
+            let mut rhs_idx = 0;
+
+            while itemset_idx < itemset_len {
+                if rhs_idx < rhs.len() {
+                    match itemset[itemset_idx].cmp(&rhs[rhs_idx]) {
+                        std::cmp::Ordering::Less => {
+                            lhs.push(itemset[itemset_idx]);
+                            itemset_idx += 1;
+                        }
+                        std::cmp::Ordering::Equal => {
+                            itemset_idx += 1;
+                            rhs_idx += 1;
+                        }
+                        std::cmp::Ordering::Greater => {
+                            rhs_idx += 1;
+                        }
+                    }
+                } else {
+                    // No more rhs items, add remaining itemset items
+                    lhs.extend_from_slice(&itemset[itemset_idx..]);
+                    break;
+                }
+            }
+            // lhs is already sorted since itemset is sorted
 
             let count_full = itemsets
-                .get(&itemset.len())
+                .get(&itemset_len)
                 .and_then(|m| m.get(itemset))
-                .cloned()
+                .copied()
                 .unwrap_or(0);
             let count_lhs = self.calculate_support(&lhs);
             let confidence = count_full as f64 / count_lhs as f64;

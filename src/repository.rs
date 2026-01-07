@@ -152,10 +152,8 @@ impl Repository {
             // Split by ':' to ignore additional data
             let main_part = line.split(':').next().unwrap_or(line);
 
-            // Try different separators
-            let items: Vec<&str> = main_part.split_whitespace().collect();
-
-            for item in items {
+            // Iterate directly without collecting into Vec
+            for item in main_part.split_whitespace() {
                 // Skip if item is not found in taxonomy
                 if let Some(&node_id) = node_by_name.get(item) {
                     arena[node_id].get_mut().bitmap.insert(transaction_id);
@@ -181,12 +179,14 @@ impl Repository {
             Self::propagate_bitmaps(arena, *child_id);
         }
 
-        // Union bitmaps of children
-        let mut combined = RoaringBitmap::new();
-        for child_id in &children {
-            combined |= &arena[*child_id].get().bitmap;
+        // Union bitmaps of children - optimize by using first child as base
+        if let Some(&first_child) = children.first() {
+            let mut combined = arena[first_child].get().bitmap.clone();
+            for child_id in &children[1..] {
+                combined |= &arena[*child_id].get().bitmap;
+            }
+            arena[node_id].get_mut().bitmap = combined;
         }
-        arena[node_id].get_mut().bitmap = combined;
     }
 
     pub fn get_children(&self, parent_nodes: &HashSet<NodeId>) -> HashSet<NodeId> {
