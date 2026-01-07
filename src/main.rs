@@ -25,23 +25,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // );
 
     configs.insert(
-        -1,
+        0,
         LevelConfig {
             support: 0.001,
             confidence: 0.2,
         },
     );
 
-    // // Run on the fruithut dataset
     // let mut apriori = Apriori::new(
     //     "datasets/fruithut_original.txt",
     //     "datasets/Fruithut_taxonomy_data.txt",
     //     configs,
     // )?;
 
+    // let mut apriori = Apriori::new(
+    //     "datasets/liquor_11.txt",
+    //     "datasets/liquor_taxonomy.txt",
+    //     configs,
+    // )?;
+
     let mut apriori = Apriori::new(
-        "datasets/liquor_11.txt",
-        "datasets/liquor_taxonomy.txt",
+        "datasets/instacart_priorFIM.txt",
+        "datasets/instacart_taxonomy.txt",
         configs,
     )?;
 

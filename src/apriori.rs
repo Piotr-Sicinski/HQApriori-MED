@@ -69,20 +69,11 @@ impl Rule {
             self.support()
         );
     }
-
-    // pub fn print_ids(&self) {
-    //     println!(
-    //         "{:?} -> {:?} (conf: {:.3}, supp: {:.3})",
-    //         self.lhs,
-    //         self.rhs,
-    //         self.confidence(),
-    //         self.support()
-    //     );
-    // }
 }
 
 pub struct Apriori {
     pub repository: Repository,
+    pub max_level: usize,
     pub level_configs: HashMap<i32, LevelConfig>,
 }
 
@@ -93,9 +84,7 @@ impl Apriori {
         level_configs: HashMap<i32, LevelConfig>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let repository = Repository::new(transactions_path, taxonomy_path)?;
-
-        // Calculate max level by traversing the tree
-        let max_level = Self::calculate_max_level(&repository);
+        let max_level = repository.arena[repository.root].get().height;
 
         // Convert negative levels to absolute values
         let mut configs = HashMap::new();
@@ -110,36 +99,31 @@ impl Apriori {
 
         Ok(Apriori {
             repository,
+            max_level,
             level_configs: configs,
         })
     }
 
-    fn calculate_max_level(repository: &Repository) -> usize {
-        let mut max_level = 0;
-        let mut queue = vec![(repository.root, 0usize)];
-
-        while let Some((node_id, level)) = queue.pop() {
-            max_level = max_level.max(level);
-            for child_id in node_id.children(&repository.arena) {
-                queue.push((child_id, level + 1));
-            }
-        }
-
-        max_level
-    }
-
     pub fn mine(&mut self) -> HashMap<usize, Vec<Rule>> {
         let mut rules_by_level = HashMap::new();
-        let mut current_level = 1;
+        let mut current_level = self.max_level - 1;
         let mut current_nodes: HashSet<NodeId> = self
             .repository
             .root
             .children(&self.repository.arena)
             .collect();
 
-        while !current_nodes.is_empty() {
+        while !current_nodes.is_empty() && current_level > 0 {
             // Check if we have config for this level
             let config = self.level_configs.get(&(current_level as i32));
+
+            println!("Current level: {}", current_level);
+            let mut node_names: Vec<_> = current_nodes
+                .iter()
+                .map(|&nid| self.repository.arena[nid].get().name.clone())
+                .collect();
+            node_names.sort();
+            println!("Current nodes: {:?}", node_names);
 
             if let Some(config) = config {
                 println!("Mining level {}", current_level);
@@ -176,10 +160,12 @@ impl Apriori {
                 }
             }
 
-            // Get children of frequent nodes for next iteration
-            current_nodes = self.repository.get_children(&current_nodes);
+            current_level -= 1;
 
-            current_level += 1;
+            // Get children of frequent nodes for next iteration
+            current_nodes = self
+                .repository
+                .get_next_level_nodes(&current_nodes, current_level);
         }
 
         rules_by_level

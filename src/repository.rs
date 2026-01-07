@@ -9,6 +9,8 @@ pub struct NodeData {
     pub id: u32,
     pub name: String,
     pub bitmap: RoaringBitmap,
+    pub height: usize,     // Distance from leaf nodes (0 for leaves)
+    pub min_height: usize, // Minimum height of the children + 1 (0 for leaves)
 }
 
 pub struct Repository {
@@ -46,6 +48,8 @@ impl Repository {
                     id: *next_id,
                     name: name.clone(),
                     bitmap: RoaringBitmap::new(),
+                    height: 0,
+                    min_height: 0,
                 };
                 let node_id = arena.new_node(node_data.clone());
                 node_by_name.insert(name.clone(), node_id);
@@ -108,6 +112,8 @@ impl Repository {
                 id: next_id,
                 name: "ROOT".to_string(),
                 bitmap: RoaringBitmap::new(),
+                height: 0,
+                min_height: 0,
             };
             let root_id = arena.new_node(root_data);
             node_by_id.insert(next_id, root_id);
@@ -122,8 +128,8 @@ impl Repository {
         let transaction_count =
             Self::load_transactions(&mut arena, &node_by_name, transactions_path)?;
 
-        // Propagate bitmaps from leaves to root
-        Self::propagate_bitmaps(&mut arena, root);
+        // Propagate bitmaps and calculate heights from leaves to root
+        Self::propagate_bitmaps_and_heights(&mut arena, root);
 
         Ok(Repository {
             arena,
@@ -168,30 +174,50 @@ impl Repository {
         Ok(transaction_id)
     }
 
-    fn propagate_bitmaps(arena: &mut Arena<NodeData>, node_id: NodeId) {
+    fn propagate_bitmaps_and_heights(arena: &mut Arena<NodeData>, node_id: NodeId) {
         let children: Vec<NodeId> = node_id.children(arena).collect();
 
         if children.is_empty() {
-            // Leaf node, bitmap already set
+            // Leaf node, height = 0, bitmap already set
+            let node = arena[node_id].get_mut();
+            node.height = 0;
+            node.min_height = 0;
             return;
         }
 
         // Recursively propagate for children
-        for child_id in &children {
-            Self::propagate_bitmaps(arena, *child_id);
+        for &child_id in &children {
+            Self::propagate_bitmaps_and_heights(arena, child_id);
         }
 
-        // Union bitmaps of children
+        // Union bitmaps of children and calculate height
         let mut combined = RoaringBitmap::new();
-        for child_id in &children {
-            combined |= &arena[*child_id].get().bitmap;
+        let mut max_height = 0;
+        let mut min_height = usize::MAX;
+        for &child_id in &children {
+            let child = arena[child_id].get();
+            combined |= &child.bitmap;
+            max_height = max_height.max(child.height);
+            min_height = min_height.min(child.min_height);
         }
-        arena[node_id].get_mut().bitmap = combined;
+
+        let node = arena[node_id].get_mut();
+        node.bitmap = combined;
+        node.height = max_height + 1;
+        node.min_height = min_height + 1;
     }
 
-    pub fn get_children(&self, parent_nodes: &HashSet<NodeId>) -> HashSet<NodeId> {
+    pub fn get_next_level_nodes(
+        &self,
+        parent_nodes: &HashSet<NodeId>,
+        desired_height: usize,
+    ) -> HashSet<NodeId> {
         let mut children = HashSet::new();
         for &parent_id in parent_nodes {
+            if self.arena[parent_id].get().height <= desired_height {
+                children.insert(parent_id);
+                continue;
+            }
             for child_id in parent_id.children(&self.arena) {
                 if !child_id.is_removed(&self.arena) {
                     children.insert(child_id);
@@ -255,8 +281,8 @@ impl Repository {
 
         // Print node name with counts
         println!(
-            "{} (child_nodes: {}, child_leafs: {})",
-            node.name, child_nodes, child_leafs
+            "{} (height: {}, child_nodes: {}, child_leafs: {})",
+            node.name, node.height, child_nodes, child_leafs
         );
 
         // Build new prefix for children
