@@ -256,27 +256,39 @@ impl Apriori {
         let mut candidates = Vec::new();
         let n = itemsets.len();
 
-        for i in 0..n {
+        let mut i = 0;
+        // Iterate over every itemset in the itemsets
+        while i < n {
+            // The number of rows to skip in the while-loop, initially set to 1
+            let mut skip = 1;
+
             let itemset_i = &itemsets[i];
             let prefix_i = &itemset_i[..itemset_i.len() - 1];
             let last_i = itemset_i[itemset_i.len() - 1];
 
+            // Keep a list of all last elements, i.e. tail elements, to perform
+            // 2-combinations on later on
             let mut tail_items = Vec::with_capacity(n - i);
             tail_items.push(last_i);
 
+            // Iterate over every itemset following this itemset
             for j in (i + 1)..n {
                 let itemset_j = &itemsets[j];
                 let prefix_j = &itemset_j[..itemset_j.len() - 1];
                 let last_j = itemset_j[itemset_j.len() - 1];
 
+                // If it's the same, append and skip this itemset in while-loop
                 if prefix_i == prefix_j {
                     tail_items.push(last_j);
+                    skip += 1;
                 } else {
+                    // If it's not the same, break out of the for-loop
                     break;
                 }
             }
 
-            // Generate candidates from tail items
+            // For every 2-combination in the tail items, yield a new candidate
+            // itemset, which is sorted.
             let tail_len = tail_items.len();
             for a_idx in 0..tail_len {
                 for b_idx in (a_idx + 1)..tail_len {
@@ -287,6 +299,9 @@ impl Apriori {
                     candidates.push(candidate);
                 }
             }
+
+            // Increment the while-loop counter
+            i += skip;
         }
 
         candidates
@@ -502,29 +517,26 @@ mod tests {
 
     fn create_test_repository() -> Repository {
         use std::fs;
-        use std::io::Write;
+        use std::thread;
+        use std::time::{SystemTime, UNIX_EPOCH};
 
-        // Create temporary test files
-        let taxonomy_path = "test_taxonomy_temp.txt";
-        let transactions_path = "test_transactions_temp.txt";
+        // Create temporary test files with unique names based on timestamp and thread ID
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let thread_id = format!("{:?}", thread::current().id())
+            .replace("ThreadId(", "")
+            .replace(")", "");
+        let taxonomy_path = format!("test_taxonomy_temp_{}_{}.txt", timestamp, thread_id);
+        let transactions_path = format!("test_transactions_temp_{}_{}.txt", timestamp, thread_id);
 
-        {
-            let mut file = fs::File::create(taxonomy_path).unwrap();
-            writeln!(file, "a,ROOT").unwrap();
-            writeln!(file, "b,ROOT").unwrap();
-            writeln!(file, "c,ROOT").unwrap();
-            writeln!(file, "d,ROOT").unwrap();
-        }
+        // Write files atomically
+        fs::write(&taxonomy_path, "a,ROOT\nb,ROOT\nc,ROOT\nd,ROOT\n").unwrap();
 
-        {
-            let mut file = fs::File::create(transactions_path).unwrap();
-            writeln!(file, "a b c").unwrap();
-            writeln!(file, "a b d").unwrap();
-            writeln!(file, "a c d").unwrap();
-            writeln!(file, "b c").unwrap();
-        }
+        fs::write(&transactions_path, "a b c\na b d\na c d\nb c\n").unwrap();
 
-        let repo = Repository::new(transactions_path, taxonomy_path).unwrap();
+        let repo = Repository::new(&transactions_path, &taxonomy_path).unwrap();
 
         // Cleanup
         fs::remove_file(taxonomy_path).ok();

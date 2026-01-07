@@ -276,27 +276,35 @@ impl Repository {
 mod tests {
     use super::*;
     use std::fs;
-    use std::io::Write;
 
     fn create_test_taxonomy() -> String {
-        let path = "test_taxonomy_temp.txt";
-        let mut file = fs::File::create(path).unwrap();
-        writeln!(file, "a,ROOT").unwrap();
-        writeln!(file, "b,ROOT").unwrap();
-        writeln!(file, "c,ROOT").unwrap();
-        writeln!(file, "d,ROOT").unwrap();
-        path.to_string()
+        use std::thread;
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let thread_id = format!("{:?}", thread::current().id())
+            .replace("ThreadId(", "")
+            .replace(")", "");
+        let path = format!("test_taxonomy_temp_{}_{}.txt", timestamp, thread_id);
+        fs::write(&path, "a,ROOT\nb,ROOT\nc,ROOT\nd,ROOT\n").unwrap();
+        path
     }
 
     fn create_test_transactions() -> String {
-        let path = "test_transactions_temp.txt";
-        let mut file = fs::File::create(path).unwrap();
-        writeln!(file, "a b c").unwrap();
-        writeln!(file, "a b d").unwrap();
-        writeln!(file, "a c d").unwrap();
-        writeln!(file, "b c").unwrap();
-        writeln!(file, "b d").unwrap();
-        path.to_string()
+        use std::thread;
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let thread_id = format!("{:?}", thread::current().id())
+            .replace("ThreadId(", "")
+            .replace(")", "");
+        let path = format!("test_transactions_temp_{}_{}.txt", timestamp, thread_id);
+        fs::write(&path, "a b c\na b d\na c d\nb c\nb d\n").unwrap();
+        path
     }
 
     #[test]
@@ -316,11 +324,20 @@ mod tests {
 
     #[test]
     fn test_repository_empty_transactions() {
+        use std::thread;
+        use std::time::{SystemTime, UNIX_EPOCH};
         let taxonomy_path = create_test_taxonomy();
-        let empty_path = "test_empty_temp.txt";
-        fs::File::create(empty_path).unwrap();
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let thread_id = format!("{:?}", thread::current().id())
+            .replace("ThreadId(", "")
+            .replace(")", "");
+        let empty_path = format!("test_empty_temp_{}_{}.txt", timestamp, thread_id);
+        fs::File::create(&empty_path).unwrap();
 
-        let repo = Repository::new(empty_path, &taxonomy_path).unwrap();
+        let repo = Repository::new(&empty_path, &taxonomy_path).unwrap();
 
         assert_eq!(repo.transaction_count, 0);
 
