@@ -1,4 +1,5 @@
-use hqapriori::apriori::{Apriori, LevelConfig, Rule};
+use hqapriori_med::apriori::{Apriori, LevelConfig, Rule};
+use hqapriori_med::repository::Repository;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -417,6 +418,49 @@ fn test_rule_validation() {
             );
         }
     }
+
+    // Cleanup
+    fs::remove_file(taxonomy_path).ok();
+    fs::remove_file(transactions_path).ok();
+}
+
+#[test]
+fn test_apriori_from_repository() {
+    // Test creating Apriori from an existing Repository instance
+    let taxonomy_path = create_test_taxonomy_file("from_repo");
+    let transactions_path = create_test_transactions_file("from_repo");
+
+    // First, create the repository separately
+    let repository = Repository::new(
+        transactions_path.to_str().unwrap(),
+        taxonomy_path.to_str().unwrap(),
+    )
+    .unwrap();
+
+    // Verify repository was created correctly
+    assert_eq!(repository.transaction_count, 5);
+
+    // Now create Apriori instance from the repository
+    let mut configs = HashMap::new();
+    configs.insert(
+        1,
+        LevelConfig {
+            support: 0.4,
+            confidence: 0.5,
+            gen_rules: true,
+        },
+    );
+
+    let mut apriori = Apriori::from_repository(repository, configs);
+
+    // Verify the apriori instance has the correct repository
+    assert_eq!(apriori.repository.transaction_count, 5);
+
+    // Mine rules
+    let rules_by_level = apriori.mine();
+
+    // Should find some rules at level 1
+    assert!(rules_by_level.contains_key(&1));
 
     // Cleanup
     fs::remove_file(taxonomy_path).ok();

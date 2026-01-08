@@ -145,7 +145,14 @@ impl Apriori {
         level_configs: HashMap<i32, LevelConfig>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let repository = Repository::new(transactions_path, taxonomy_path)?;
+        Ok(Self::from_repository(repository, level_configs))
+    }
 
+    /// Create an Apriori instance from an existing Repository
+    pub fn from_repository(
+        repository: Repository,
+        level_configs: HashMap<i32, LevelConfig>,
+    ) -> Self {
         // Calculate max level by traversing the tree
         let max_level = Self::calculate_max_level(&repository);
 
@@ -160,10 +167,10 @@ impl Apriori {
             configs.insert(actual_level, config);
         }
 
-        Ok(Apriori {
+        Apriori {
             repository,
             level_configs: configs,
-        })
+        }
     }
 
     fn calculate_max_level(repository: &Repository) -> usize {

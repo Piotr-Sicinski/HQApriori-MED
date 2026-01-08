@@ -11,6 +11,7 @@ pub struct NodeData {
     pub bitmap: RoaringBitmap,
 }
 
+#[derive(Clone)]
 pub struct Repository {
     pub arena: Arena<NodeData>,
     pub root: NodeId,

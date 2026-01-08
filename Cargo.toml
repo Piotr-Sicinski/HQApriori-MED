@@ -4,9 +4,24 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "hqapriori"
+name = "hqapriori_med"
 path = "src/lib.rs"
+
+[[bin]]
+name = "hqapriori"
+path = "src/main.rs"
+
+[[bin]]
+name = "experiments"
+path = "src/experiments.rs"
+
+[[bin]]
+name = "test_experiments"
+path = "src/test_experiments.rs"
 
 [dependencies]
 roaring = "0.10"
 indextree = "4.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"

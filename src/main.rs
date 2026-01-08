@@ -9,22 +9,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example configuration
     use std::collections::HashMap;
     let mut configs = HashMap::new();
-    // configs.insert(
-    //     1,
-    //     LevelConfig {
-    //         support: 0.3,
-    //         confidence: 0.6,
-    //         enabled: true,
-    //     },
-    // );
-    // configs.insert(
-    //     2,
-    //     LevelConfig {
-    //         support: 0.2,
-    //         confidence: 0.5,
-    //     },
-    // );
-
+    configs.insert(
+        1,
+        LevelConfig {
+            support: 0.5,
+            confidence: 0.2,
+            gen_rules: false,
+        },
+    );
+    configs.insert(
+        2,
+        LevelConfig {
+            support: 0.08,
+            confidence: 0.2,
+            gen_rules: false,
+        },
+    );
     configs.insert(
         3,
         LevelConfig {
@@ -42,7 +42,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // )?;
 
     let mut apriori = Apriori::new(
-        "datasets/instacart_trainFIM.txt",
+        // "datasets/instacart_trainFIM.txt",
+        "datasets/instacart_priorFIM.txt",
         "datasets/instacart_taxonomy.txt",
         configs,
     )?;
