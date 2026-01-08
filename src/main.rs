@@ -14,6 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     LevelConfig {
     //         support: 0.3,
     //         confidence: 0.6,
+    //         enabled: true,
     //     },
     // );
     // configs.insert(
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         LevelConfig {
             support: 0.001,
             confidence: 0.2,
+            enabled: true,
         },
     );
 
@@ -40,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // )?;
 
     let mut apriori = Apriori::new(
-        "datasets/instacart_trainFIM-tiny.txt",
+        "datasets/instacart_priorFIM.txt",
         "datasets/instacart_taxonomy.txt",
         configs,
     )?;

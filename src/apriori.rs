@@ -8,6 +8,17 @@ type Itemset = Vec<u32>;
 pub struct LevelConfig {
     pub support: f64,
     pub confidence: f64,
+    pub enabled: bool,
+}
+
+impl Default for LevelConfig {
+    fn default() -> Self {
+        Self {
+            support: 0.0,
+            confidence: 0.0,
+            enabled: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -170,12 +181,19 @@ impl Apriori {
                     println!("Generating itemsets for level {}", current_level);
                     let itemsets = self.generate_itemsets(&current_nodes, min_support_count);
 
-                    // Generate rules
-                    println!("Generating rules for level {}", current_level);
-                    let rules = self.generate_rules(&itemsets, config.confidence);
+                    // Generate rules only if enabled
+                    if config.enabled {
+                        println!("Generating rules for level {}", current_level);
+                        let rules = self.generate_rules(&itemsets, config.confidence);
 
-                    println!("  Found {} rules at level {}", rules.len(), current_level);
-                    rules_by_level.insert(current_level, rules);
+                        println!("  Found {} rules at level {}", rules.len(), current_level);
+                        rules_by_level.insert(current_level, rules);
+                    } else {
+                        println!(
+                            "Skipping rule generation at level {} (disabled)",
+                            current_level
+                        );
+                    }
                 }
             }
 

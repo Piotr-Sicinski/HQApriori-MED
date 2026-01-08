@@ -100,6 +100,7 @@ fn test_basic_itemset_generation() {
         LevelConfig {
             support: 0.4, // 2/5 = 0.4 minimum
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -131,6 +132,7 @@ fn test_support_threshold() {
         LevelConfig {
             support: 0.8, // Very high threshold - should find fewer itemsets
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -162,6 +164,7 @@ fn test_confidence_threshold() {
         LevelConfig {
             support: 0.4,
             confidence: 1.0, // Very high confidence - should find fewer rules
+            enabled: true,
         },
     );
 
@@ -200,6 +203,7 @@ fn test_empty_transactions() {
         LevelConfig {
             support: 0.1,
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -231,6 +235,7 @@ fn test_negative_level_config() {
         LevelConfig {
             support: 0.4,
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -286,6 +291,7 @@ fn test_apriori_algorithm_example_from_paper() {
         LevelConfig {
             support: 0.4, // 2/5
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -334,6 +340,7 @@ fn test_multiple_levels() {
         LevelConfig {
             support: 0.3,
             confidence: 0.5,
+            enabled: true,
         },
     );
     configs.insert(
@@ -341,6 +348,7 @@ fn test_multiple_levels() {
         LevelConfig {
             support: 0.3,
             confidence: 0.5,
+            enabled: true,
         },
     );
 
@@ -375,6 +383,7 @@ fn test_rule_validation() {
         LevelConfig {
             support: 0.4,
             confidence: min_confidence,
+            enabled: true,
         },
     );
 
