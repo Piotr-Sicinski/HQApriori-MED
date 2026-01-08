@@ -8,7 +8,7 @@ type Itemset = Vec<u32>;
 pub struct LevelConfig {
     pub support: f64,
     pub confidence: f64,
-    pub enabled: bool,
+    pub gen_rules: bool,
 }
 
 impl Default for LevelConfig {
@@ -16,7 +16,7 @@ impl Default for LevelConfig {
         Self {
             support: 0.0,
             confidence: 0.0,
-            enabled: true,
+            gen_rules: true,
         }
     }
 }
@@ -90,6 +90,47 @@ impl Rule {
     //         self.support()
     //     );
     // }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SortBy {
+    Confidence,
+    Support,
+    ConfidenceSupport, // Sort by confidence first, then support
+}
+
+pub fn sort_rules(rules: &mut Vec<Rule>, sort_by: SortBy) {
+    match sort_by {
+        SortBy::Confidence => {
+            rules.sort_by(|a, b| {
+                b.confidence()
+                    .partial_cmp(&a.confidence())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+        SortBy::Support => {
+            rules.sort_by(|a, b| {
+                b.support()
+                    .partial_cmp(&a.support())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+        SortBy::ConfidenceSupport => {
+            rules.sort_by(|a, b| {
+                let conf_cmp = b
+                    .confidence()
+                    .partial_cmp(&a.confidence())
+                    .unwrap_or(std::cmp::Ordering::Equal);
+                if conf_cmp == std::cmp::Ordering::Equal {
+                    b.support()
+                        .partial_cmp(&a.support())
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                } else {
+                    conf_cmp
+                }
+            });
+        }
+    }
 }
 
 pub struct Apriori {
@@ -182,7 +223,7 @@ impl Apriori {
                     let itemsets = self.generate_itemsets(&current_nodes, min_support_count);
 
                     // Generate rules only if enabled
-                    if config.enabled {
+                    if config.gen_rules {
                         println!("Generating rules for level {}", current_level);
                         let rules = self.generate_rules(&itemsets, config.confidence);
 
