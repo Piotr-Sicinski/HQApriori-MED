@@ -10,6 +10,8 @@ This script creates visualizations for:
 
 Plots are organized in folders matching the experiment structure,
 with separate folders for instacart_prior and instacart_train.
+
+Note: All experiment results are averages over multiple runs (N=5 by default).
 """
 
 import json
@@ -123,12 +125,16 @@ def plot_parameter_sensitivity_support(dataset_name: str, base_dir: str = "exper
         ax.set_xticks(x)
         ax.set_xticklabels([f'{s:.3f}' for s in supports])
         ax.grid(True, alpha=0.3, axis='y')
+        ax.set_ylim(bottom=0)  # Ensure bars start at 0
         
         # Add secondary y-axis for actual execution time
         ax2 = ax.twinx()
         ax2.set_ylabel('Execution Time (ms)', fontweight='bold', color='coral')
-        ax2.plot(x, exec_times, 'o-', color='coral', linewidth=2, markersize=8, alpha=0.7)
         ax2.tick_params(axis='y', labelcolor='coral')
+        ax2.set_ylim(bottom=0)  # Ensure secondary axis starts at 0
+        # Set y-axis limits based on exec_times
+        if exec_times:
+            ax2.set_ylim(bottom=0, top=max(exec_times) * 1.1)
         
         # Position legend outside plot area to avoid overlapping bars
         ax.legend(loc='upper left', bbox_to_anchor=(1.15, 1), framealpha=0.9)
@@ -164,8 +170,8 @@ def plot_parameter_sensitivity_confidence(dataset_name: str, base_dir: str = "ex
     exec_times = []
     
     for confidence in confidences:
-        # Find matching file
-        pattern = f"{base_dir}/parameter_sensitivity/{dataset_name}_level{level}_s{support}_c{confidence}.json"
+        # Find matching file - updated to match new filename pattern from experiments.rs
+        pattern = f"{base_dir}/parameter_sensitivity/{dataset_name}_confidence_c{confidence}.json"
         files = glob.glob(pattern)
         
         if files:
@@ -210,12 +216,16 @@ def plot_parameter_sensitivity_confidence(dataset_name: str, base_dir: str = "ex
     ax.set_xticks(x)
     ax.set_xticklabels([f'{c:.2f}' for c in confidences])
     ax.grid(True, alpha=0.3, axis='y')
+    ax.set_ylim(bottom=0)  # Ensure bars start at 0
     
     # Add secondary y-axis for actual execution time
     ax2 = ax.twinx()
     ax2.set_ylabel('Execution Time (ms)', fontweight='bold', color='coral')
-    ax2.plot(x, exec_times, 'o-', color='coral', linewidth=2, markersize=8, alpha=0.7)
     ax2.tick_params(axis='y', labelcolor='coral')
+    ax2.set_ylim(bottom=0)  # Ensure secondary axis starts at 0
+    # Set y-axis limits based on exec_times
+    if exec_times:
+        ax2.set_ylim(bottom=0, top=max(exec_times) * 1.1)
     
     # Position legend outside plot area to avoid overlapping bars
     ax.legend(loc='upper left', bbox_to_anchor=(1.15, 1), framealpha=0.9)

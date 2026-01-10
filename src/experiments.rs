@@ -7,6 +7,13 @@ use std::fs;
 use std::time::Instant;
 
 // ============================================================================
+// Configuration Constants
+// ============================================================================
+
+/// Number of times to run each experiment (results are averaged)
+const NUM_EXPERIMENT_RUNS: usize = 5;
+
+// ============================================================================
 // Data Structures for Results
 // ============================================================================
 
@@ -29,9 +36,6 @@ struct LevelConfigOutput {
 #[derive(Debug, Serialize, Deserialize)]
 struct ExperimentResults {
     total_time_ms: u128,
-    itemset_gen_time_ms: HashMap<String, u128>,
-    rule_gen_time_ms: u128,
-    num_frequent_itemsets: HashMap<String, usize>,
     num_rules: usize,
 }
 
@@ -111,10 +115,18 @@ struct SensitivityIteration {
     level_1_support: f64,
     level_2_support: f64,
     total_time_ms: u128,
-    itemset_gen_time_ms: HashMap<String, u128>,
-    rule_gen_time_ms: u128,
-    num_frequent_itemsets: HashMap<String, usize>,
     num_rules: usize,
+}
+
+// ============================================================================
+// Common Utilities
+// ============================================================================
+
+/// Save experiment results to JSON file
+fn save_to_json<T: Serialize>(result: &T, filepath: &str) {
+    let json_str = serde_json::to_string_pretty(result).expect("Failed to serialize result");
+    fs::write(filepath, json_str).expect("Failed to write JSON file");
+    println!("  Saved to {}", filepath);
 }
 
 // ============================================================================
@@ -408,163 +420,220 @@ fn run_parameter_sensitivity(dataset_path: &str, taxonomy_path: &str, dataset_na
     let level_3_supports = vec![0.001, 0.003, 0.005, 0.007, 0.01];
     let confidences = vec![0.1, 0.15, 0.2, 0.25, 0.3];
 
+    // Default support values for confidence threshold experiments
+    let default_level_1_support = 0.5;
+    let default_level_2_support = 0.08;
+    let default_level_3_support = 0.005;
+
+    // Fixed confidence for support threshold experiments
+    let fixed_confidence = 0.2;
+
     let mut experiment_count = 0;
-    let total_experiments =
-        (level_1_supports.len() + level_2_supports.len() + level_3_supports.len())
-            * confidences.len();
+    let total_experiments = level_1_supports.len()
+        + level_2_supports.len()
+        + level_3_supports.len()
+        + confidences.len();
 
-    // Test Level 1 variations
+    println!("Part 1: Support Threshold Sensitivity (15 experiments)");
+    println!("------------------------------------------------------");
+
+    // Part 1: Support threshold sensitivity - Level 1 (5 experiments)
     for &support in &level_1_supports {
-        for &confidence in &confidences {
-            experiment_count += 1;
-            println!(
-                "Running experiment {}/{}: Level 1, support={}, confidence={}",
-                experiment_count, total_experiments, support, confidence
-            );
+        experiment_count += 1;
+        println!(
+            "Running experiment {}/{}: Level 1, support={}, confidence={}",
+            experiment_count, total_experiments, support, fixed_confidence
+        );
 
-            let mut configs = HashMap::new();
-            configs.insert(
-                1,
-                LevelConfig {
-                    support,
-                    confidence,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                2,
-                LevelConfig {
-                    support: 0.08,
-                    confidence: 0.2,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                3,
-                LevelConfig {
-                    support: 0.005,
-                    confidence: 0.2,
-                    gen_rules: true,
-                },
-            );
+        let mut configs = HashMap::new();
+        configs.insert(
+            1,
+            LevelConfig {
+                support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            2,
+            LevelConfig {
+                support: default_level_2_support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            3,
+            LevelConfig {
+                support: default_level_3_support,
+                confidence: fixed_confidence,
+                gen_rules: true,
+            },
+        );
 
-            let result = run_single_experiment(
-                dataset_path,
-                taxonomy_path,
-                configs.clone(),
-                1,
-                dataset_name,
-            );
+        let result = run_single_experiment_averaged(
+            dataset_path,
+            taxonomy_path,
+            configs.clone(),
+            1,
+            dataset_name,
+        );
 
-            // Save result
-            let filename = format!(
-                "experiments/parameter_sensitivity/{}_level1_s{}_c{}.json",
-                dataset_name, support, confidence
-            );
-            fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
-        }
+        let filename = format!(
+            "experiments/parameter_sensitivity/{}_level1_s{}_c{}.json",
+            dataset_name, support, fixed_confidence
+        );
+        save_to_json(&result, &filename);
     }
 
-    // Test Level 2 variations
+    // Part 1: Support threshold sensitivity - Level 2 (5 experiments)
     for &support in &level_2_supports {
-        for &confidence in &confidences {
-            experiment_count += 1;
-            println!(
-                "Running experiment {}/{}: Level 2, support={}, confidence={}",
-                experiment_count, total_experiments, support, confidence
-            );
+        experiment_count += 1;
+        println!(
+            "Running experiment {}/{}: Level 2, support={}, confidence={}",
+            experiment_count, total_experiments, support, fixed_confidence
+        );
 
-            let mut configs = HashMap::new();
-            configs.insert(
-                1,
-                LevelConfig {
-                    support: 0.5,
-                    confidence: 0.2,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                2,
-                LevelConfig {
-                    support,
-                    confidence,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                3,
-                LevelConfig {
-                    support: 0.005,
-                    confidence: 0.2,
-                    gen_rules: true,
-                },
-            );
+        let mut configs = HashMap::new();
+        configs.insert(
+            1,
+            LevelConfig {
+                support: default_level_1_support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            2,
+            LevelConfig {
+                support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            3,
+            LevelConfig {
+                support: default_level_3_support,
+                confidence: fixed_confidence,
+                gen_rules: true,
+            },
+        );
 
-            let result = run_single_experiment(
-                dataset_path,
-                taxonomy_path,
-                configs.clone(),
-                2,
-                dataset_name,
-            );
+        let result = run_single_experiment_averaged(
+            dataset_path,
+            taxonomy_path,
+            configs.clone(),
+            2,
+            dataset_name,
+        );
 
-            let filename = format!(
-                "experiments/parameter_sensitivity/{}_level2_s{}_c{}.json",
-                dataset_name, support, confidence
-            );
-            fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
-        }
+        let filename = format!(
+            "experiments/parameter_sensitivity/{}_level2_s{}_c{}.json",
+            dataset_name, support, fixed_confidence
+        );
+        save_to_json(&result, &filename);
     }
 
-    // Test Level 3 variations
+    // Part 1: Support threshold sensitivity - Level 3 (5 experiments)
     for &support in &level_3_supports {
-        for &confidence in &confidences {
-            experiment_count += 1;
-            println!(
-                "Running experiment {}/{}: Level 3, support={}, confidence={}",
-                experiment_count, total_experiments, support, confidence
-            );
+        experiment_count += 1;
+        println!(
+            "Running experiment {}/{}: Level 3, support={}, confidence={}",
+            experiment_count, total_experiments, support, fixed_confidence
+        );
 
-            let mut configs = HashMap::new();
-            configs.insert(
-                1,
-                LevelConfig {
-                    support: 0.5,
-                    confidence: 0.2,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                2,
-                LevelConfig {
-                    support: 0.08,
-                    confidence: 0.2,
-                    gen_rules: false,
-                },
-            );
-            configs.insert(
-                3,
-                LevelConfig {
-                    support,
-                    confidence,
-                    gen_rules: true,
-                },
-            );
+        let mut configs = HashMap::new();
+        configs.insert(
+            1,
+            LevelConfig {
+                support: default_level_1_support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            2,
+            LevelConfig {
+                support: default_level_2_support,
+                confidence: fixed_confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            3,
+            LevelConfig {
+                support,
+                confidence: fixed_confidence,
+                gen_rules: true,
+            },
+        );
 
-            let result = run_single_experiment(
-                dataset_path,
-                taxonomy_path,
-                configs.clone(),
-                3,
-                dataset_name,
-            );
+        let result = run_single_experiment_averaged(
+            dataset_path,
+            taxonomy_path,
+            configs.clone(),
+            3,
+            dataset_name,
+        );
 
-            let filename = format!(
-                "experiments/parameter_sensitivity/{}_level3_s{}_c{}.json",
-                dataset_name, support, confidence
-            );
-            fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
-        }
+        let filename = format!(
+            "experiments/parameter_sensitivity/{}_level3_s{}_c{}.json",
+            dataset_name, support, fixed_confidence
+        );
+        save_to_json(&result, &filename);
+    }
+
+    println!("\nPart 2: Confidence Threshold Sensitivity (5 experiments)");
+    println!("----------------------------------------------------------");
+
+    // Part 2: Confidence threshold sensitivity (5 experiments)
+    for &confidence in &confidences {
+        experiment_count += 1;
+        println!(
+            "Running experiment {}/{}: All levels with default supports, confidence={}",
+            experiment_count, total_experiments, confidence
+        );
+
+        let mut configs = HashMap::new();
+        configs.insert(
+            1,
+            LevelConfig {
+                support: default_level_1_support,
+                confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            2,
+            LevelConfig {
+                support: default_level_2_support,
+                confidence,
+                gen_rules: false,
+            },
+        );
+        configs.insert(
+            3,
+            LevelConfig {
+                support: default_level_3_support,
+                confidence,
+                gen_rules: true,
+            },
+        );
+
+        let result = run_single_experiment_averaged(
+            dataset_path,
+            taxonomy_path,
+            configs.clone(),
+            3, // Level 3 is where rules are generated
+            dataset_name,
+        );
+
+        let filename = format!(
+            "experiments/parameter_sensitivity/{}_confidence_c{}.json",
+            dataset_name, confidence
+        );
+        save_to_json(&result, &filename);
     }
 
     println!(
@@ -573,28 +642,34 @@ fn run_parameter_sensitivity(dataset_path: &str, taxonomy_path: &str, dataset_na
     );
 }
 
-fn run_single_experiment(
+/// Run a single parameter sensitivity experiment N times and return averaged results
+fn run_single_experiment_averaged(
     dataset_path: &str,
     taxonomy_path: &str,
     configs: HashMap<i32, LevelConfig>,
     level_tested: i32,
     dataset_name: &str,
 ) -> ParameterSensitivityResult {
-    let start = Instant::now();
+    let mut total_times = Vec::new();
+    let mut num_rules_vec = Vec::new();
 
-    let mut apriori = Apriori::new(dataset_path, taxonomy_path, configs.clone()).unwrap();
+    for run in 0..NUM_EXPERIMENT_RUNS {
+        println!("    Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
 
-    let rules_by_level = apriori.mine();
+        let start = Instant::now();
+        let mut apriori = Apriori::new(dataset_path, taxonomy_path, configs.clone()).unwrap();
+        let rules_by_level = apriori.mine();
+        let total_time = start.elapsed().as_millis();
 
-    let total_time = start.elapsed().as_millis();
+        let num_rules: usize = rules_by_level.values().map(|v| v.len()).sum();
 
-    // Count itemsets (approximate from rules)
-    let mut num_frequent_itemsets = HashMap::new();
-    num_frequent_itemsets.insert("1".to_string(), 0);
-    num_frequent_itemsets.insert("2".to_string(), 0);
-    num_frequent_itemsets.insert("3".to_string(), 0);
+        total_times.push(total_time);
+        num_rules_vec.push(num_rules);
+    }
 
-    let num_rules = rules_by_level.values().map(|v| v.len()).sum();
+    // Calculate averages
+    let avg_time = total_times.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+    let avg_rules = num_rules_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
 
     // Convert configs to output format
     let level_configs: HashMap<String, LevelConfigOutput> = configs
@@ -617,11 +692,8 @@ fn run_single_experiment(
         level_tested,
         level_configs,
         results: ExperimentResults {
-            total_time_ms: total_time,
-            itemset_gen_time_ms: HashMap::new(),
-            rule_gen_time_ms: 0,
-            num_frequent_itemsets,
-            num_rules,
+            total_time_ms: avg_time,
+            num_rules: avg_rules,
         },
     }
 }
@@ -652,9 +724,7 @@ fn run_record_scalability(dataset_path: &str, taxonomy_path: &str, dataset_name:
             original_count * mult
         );
 
-        let start = Instant::now();
-
-        // Extend repository
+        // Extend repository once for this multiplier
         let extended_repo = if mult == 1 {
             base_repo.clone()
         } else {
@@ -688,12 +758,27 @@ fn run_record_scalability(dataset_path: &str, taxonomy_path: &str, dataset_name:
             },
         );
 
-        let mut apriori = Apriori::from_repository(extended_repo, configs.clone());
-        let rules_by_level = apriori.mine();
+        // Run N times and collect results
+        let mut total_times = Vec::new();
+        let mut num_rules_vec = Vec::new();
 
-        let total_time = start.elapsed().as_millis();
+        for run in 0..NUM_EXPERIMENT_RUNS {
+            println!("  Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
 
-        let num_rules = rules_by_level.values().map(|v| v.len()).sum();
+            let start = Instant::now();
+            let mut apriori = Apriori::from_repository(extended_repo.clone(), configs.clone());
+            let rules_by_level = apriori.mine();
+            let total_time = start.elapsed().as_millis();
+
+            let num_rules: usize = rules_by_level.values().map(|v| v.len()).sum();
+
+            total_times.push(total_time);
+            num_rules_vec.push(num_rules);
+        }
+
+        // Calculate averages
+        let avg_time = total_times.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+        let avg_rules = num_rules_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
 
         // Convert configs
         let level_configs: HashMap<String, LevelConfigOutput> = configs
@@ -718,11 +803,8 @@ fn run_record_scalability(dataset_path: &str, taxonomy_path: &str, dataset_name:
             scaled_transactions: original_count * mult,
             level_configs,
             results: ExperimentResults {
-                total_time_ms: total_time,
-                itemset_gen_time_ms: HashMap::new(),
-                rule_gen_time_ms: 0,
-                num_frequent_itemsets: HashMap::new(),
-                num_rules,
+                total_time_ms: avg_time,
+                num_rules: avg_rules,
             },
         };
 
@@ -730,9 +812,9 @@ fn run_record_scalability(dataset_path: &str, taxonomy_path: &str, dataset_name:
             "experiments/scalability_records/{}_mult{}.json",
             dataset_name, mult
         );
-        fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+        save_to_json(&result, &filename);
 
-        println!("  Time: {}ms, Rules: {}", total_time, num_rules);
+        println!("  Avg Time: {}ms, Avg Rules: {}", avg_time, avg_rules);
     }
 
     println!(
@@ -753,7 +835,7 @@ fn run_attribute_scalability(dataset_path: &str, taxonomy_path: &str, dataset_na
 
     fs::create_dir_all("experiments/scalability_attributes").unwrap();
 
-    let multipliers = vec![1.0, 1.5, 2.0];
+    let multipliers = vec![1.0, 1.25, 1.5, 1.75, 2.0];
 
     // Load base repository
     println!("Loading base repository...");
@@ -763,9 +845,7 @@ fn run_attribute_scalability(dataset_path: &str, taxonomy_path: &str, dataset_na
     for &mult in &multipliers {
         println!("\nRunning with attribute multiplier {}x...", mult);
 
-        let start = Instant::now();
-
-        // Expand repository with synthetic attributes
+        // Expand repository with synthetic attributes once
         let expanded_repo = expand_repository_attributes(&base_repo, mult);
         let scaled_attrs = expanded_repo.node_by_id.len();
 
@@ -798,11 +878,27 @@ fn run_attribute_scalability(dataset_path: &str, taxonomy_path: &str, dataset_na
             },
         );
 
-        let mut apriori = Apriori::from_repository(expanded_repo, configs.clone());
-        let rules_by_level = apriori.mine();
+        // Run N times and collect results
+        let mut total_times = Vec::new();
+        let mut num_rules_vec = Vec::new();
 
-        let total_time = start.elapsed().as_millis();
-        let num_rules = rules_by_level.values().map(|v| v.len()).sum();
+        for run in 0..NUM_EXPERIMENT_RUNS {
+            println!("  Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
+
+            let start = Instant::now();
+            let mut apriori = Apriori::from_repository(expanded_repo.clone(), configs.clone());
+            let rules_by_level = apriori.mine();
+            let total_time = start.elapsed().as_millis();
+
+            let num_rules: usize = rules_by_level.values().map(|v| v.len()).sum();
+
+            total_times.push(total_time);
+            num_rules_vec.push(num_rules);
+        }
+
+        // Calculate averages
+        let avg_time = total_times.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+        let avg_rules = num_rules_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
 
         let level_configs: HashMap<String, LevelConfigOutput> = configs
             .iter()
@@ -826,11 +922,8 @@ fn run_attribute_scalability(dataset_path: &str, taxonomy_path: &str, dataset_na
             scaled_attributes: scaled_attrs,
             level_configs,
             results: ExperimentResults {
-                total_time_ms: total_time,
-                itemset_gen_time_ms: HashMap::new(),
-                rule_gen_time_ms: 0,
-                num_frequent_itemsets: HashMap::new(),
-                num_rules,
+                total_time_ms: avg_time,
+                num_rules: avg_rules,
             },
         };
 
@@ -838,9 +931,9 @@ fn run_attribute_scalability(dataset_path: &str, taxonomy_path: &str, dataset_na
             "experiments/scalability_attributes/{}_mult{}.json",
             dataset_name, mult
         );
-        fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+        save_to_json(&result, &filename);
 
-        println!("  Time: {}ms, Rules: {}", total_time, num_rules);
+        println!("  Avg Time: {}ms, Avg Rules: {}", avg_time, avg_rules);
     }
 
     println!(
@@ -861,10 +954,15 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
 
     fs::create_dir_all("experiments/multi_pass_comparison").unwrap();
 
-    // Multi-pass approach: Run 3 separate times
-    println!("Running multi-pass approach (3 separate runs)...");
+    // Multi-pass approach: Run 3 separate times, N runs each
+    println!(
+        "Running multi-pass approach (3 separate passes, {} runs each)...",
+        NUM_EXPERIMENT_RUNS
+    );
 
-    let start1 = Instant::now();
+    // Pass 1 - N runs
+    let mut times1 = Vec::new();
+    let mut rules1_vec = Vec::new();
     let mut configs1 = HashMap::new();
     configs1.insert(
         1,
@@ -874,12 +972,21 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
             gen_rules: true,
         },
     );
-    let mut apriori1 = Apriori::new(dataset_path, taxonomy_path, configs1).unwrap();
-    let rules1 = apriori1.mine();
-    let time1 = start1.elapsed().as_millis();
-    let rules_count1 = rules1.values().map(|v| v.len()).sum();
 
-    let start2 = Instant::now();
+    for run in 0..NUM_EXPERIMENT_RUNS {
+        println!("  Pass 1, Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
+        let start1 = Instant::now();
+        let mut apriori1 = Apriori::new(dataset_path, taxonomy_path, configs1.clone()).unwrap();
+        let rules1 = apriori1.mine();
+        let time1 = start1.elapsed().as_millis();
+        let rules_count1: usize = rules1.values().map(|v| v.len()).sum();
+        times1.push(time1);
+        rules1_vec.push(rules_count1);
+    }
+
+    // Pass 2 - N runs
+    let mut times2 = Vec::new();
+    let mut rules2_vec = Vec::new();
     let mut configs2 = HashMap::new();
     configs2.insert(
         2,
@@ -889,12 +996,21 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
             gen_rules: true,
         },
     );
-    let mut apriori2 = Apriori::new(dataset_path, taxonomy_path, configs2).unwrap();
-    let rules2 = apriori2.mine();
-    let time2 = start2.elapsed().as_millis();
-    let rules_count2 = rules2.values().map(|v| v.len()).sum();
 
-    let start3 = Instant::now();
+    for run in 0..NUM_EXPERIMENT_RUNS {
+        println!("  Pass 2, Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
+        let start2 = Instant::now();
+        let mut apriori2 = Apriori::new(dataset_path, taxonomy_path, configs2.clone()).unwrap();
+        let rules2 = apriori2.mine();
+        let time2 = start2.elapsed().as_millis();
+        let rules_count2: usize = rules2.values().map(|v| v.len()).sum();
+        times2.push(time2);
+        rules2_vec.push(rules_count2);
+    }
+
+    // Pass 3 - N runs
+    let mut times3 = Vec::new();
+    let mut rules3_vec = Vec::new();
     let mut configs3 = HashMap::new();
     configs3.insert(
         3,
@@ -904,26 +1020,43 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
             gen_rules: true,
         },
     );
-    let mut apriori3 = Apriori::new(dataset_path, taxonomy_path, configs3).unwrap();
-    let rules3 = apriori3.mine();
-    let time3 = start3.elapsed().as_millis();
-    let rules_count3 = rules3.values().map(|v| v.len()).sum();
 
-    let multi_pass_total = time1 + time2 + time3;
-    let multi_pass_rules = rules_count1 + rules_count2 + rules_count3;
+    for run in 0..NUM_EXPERIMENT_RUNS {
+        println!("  Pass 3, Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
+        let start3 = Instant::now();
+        let mut apriori3 = Apriori::new(dataset_path, taxonomy_path, configs3.clone()).unwrap();
+        let rules3 = apriori3.mine();
+        let time3 = start3.elapsed().as_millis();
+        let rules_count3: usize = rules3.values().map(|v| v.len()).sum();
+        times3.push(time3);
+        rules3_vec.push(rules_count3);
+    }
 
-    println!("  Pass 1: {}ms, {} rules", time1, rules_count1);
-    println!("  Pass 2: {}ms, {} rules", time2, rules_count2);
-    println!("  Pass 3: {}ms, {} rules", time3, rules_count3);
+    // Calculate averages
+    let avg_time1 = times1.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+    let avg_rules1 = rules1_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
+    let avg_time2 = times2.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+    let avg_rules2 = rules2_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
+    let avg_time3 = times3.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+    let avg_rules3 = rules3_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
+
+    let multi_pass_total = avg_time1 + avg_time2 + avg_time3;
+    let multi_pass_rules = avg_rules1 + avg_rules2 + avg_rules3;
+
+    println!("  Avg Pass 1: {}ms, {} rules", avg_time1, avg_rules1);
+    println!("  Avg Pass 2: {}ms, {} rules", avg_time2, avg_rules2);
+    println!("  Avg Pass 3: {}ms, {} rules", avg_time3, avg_rules3);
     println!(
         "  Total: {}ms, {} rules",
         multi_pass_total, multi_pass_rules
     );
 
-    // Single-pass approach
-    println!("\nRunning single-pass approach (integrated)...");
+    // Single-pass approach - N runs
+    println!(
+        "\nRunning single-pass approach (integrated, {} runs)...",
+        NUM_EXPERIMENT_RUNS
+    );
 
-    let start_single = Instant::now();
     let mut configs_single = HashMap::new();
     configs_single.insert(
         1,
@@ -949,16 +1082,39 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
             gen_rules: true,
         },
     );
-    let mut apriori_single =
-        Apriori::new(dataset_path, taxonomy_path, configs_single.clone()).unwrap();
-    let rules_single = apriori_single.mine();
-    let time_single = start_single.elapsed().as_millis();
 
-    let single_pass_rules = rules_single.values().map(|v| v.len()).sum();
+    let mut times_single = Vec::new();
+    let mut rules_single_vec = Vec::new();
+    let mut last_rules_by_level = HashMap::new();
+
+    for run in 0..NUM_EXPERIMENT_RUNS {
+        println!("  Single-pass, Run {}/{}", run + 1, NUM_EXPERIMENT_RUNS);
+        let start_single = Instant::now();
+        let mut apriori_single =
+            Apriori::new(dataset_path, taxonomy_path, configs_single.clone()).unwrap();
+        let rules_single = apriori_single.mine();
+        let time_single = start_single.elapsed().as_millis();
+
+        let single_pass_rules: usize = rules_single.values().map(|v| v.len()).sum();
+        times_single.push(time_single);
+        rules_single_vec.push(single_pass_rules);
+
+        // Keep last run's detailed breakdown
+        if run == NUM_EXPERIMENT_RUNS - 1 {
+            last_rules_by_level = rules_single;
+        }
+    }
+
+    let avg_time_single = times_single.iter().sum::<u128>() / NUM_EXPERIMENT_RUNS as u128;
+    let avg_rules_single = rules_single_vec.iter().sum::<usize>() / NUM_EXPERIMENT_RUNS;
+
     let time_saved_pct =
-        ((multi_pass_total as f64 - time_single as f64) / multi_pass_total as f64) * 100.0;
+        ((multi_pass_total as f64 - avg_time_single as f64) / multi_pass_total as f64) * 100.0;
 
-    println!("  Time: {}ms, {} rules", time_single, single_pass_rules);
+    println!(
+        "  Avg Time: {}ms, {} rules",
+        avg_time_single, avg_rules_single
+    );
     println!("  Time saved: {:.2}%", time_saved_pct);
 
     // Convert configs
@@ -977,12 +1133,12 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
         .collect();
 
     let mut rules_by_level_multi = HashMap::new();
-    rules_by_level_multi.insert("1".to_string(), rules_count1);
-    rules_by_level_multi.insert("2".to_string(), rules_count2);
-    rules_by_level_multi.insert("3".to_string(), rules_count3);
+    rules_by_level_multi.insert("1".to_string(), avg_rules1);
+    rules_by_level_multi.insert("2".to_string(), avg_rules2);
+    rules_by_level_multi.insert("3".to_string(), avg_rules3);
 
     let mut rules_by_level_single = HashMap::new();
-    for (level, rules) in rules_single.iter() {
+    for (level, rules) in last_rules_by_level.iter() {
         rules_by_level_single.insert(level.to_string(), rules.len());
     }
 
@@ -992,16 +1148,16 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
         level_configs,
         results: MultiPassResults {
             multi_pass: MultiPassData {
-                pass_1_time_ms: time1,
-                pass_2_time_ms: time2,
-                pass_3_time_ms: time3,
+                pass_1_time_ms: avg_time1,
+                pass_2_time_ms: avg_time2,
+                pass_3_time_ms: avg_time3,
                 total_time_ms: multi_pass_total,
                 total_rules: multi_pass_rules,
                 rules_by_level: rules_by_level_multi,
             },
             single_pass: SinglePassData {
-                total_time_ms: time_single,
-                total_rules: single_pass_rules,
+                total_time_ms: avg_time_single,
+                total_rules: avg_rules_single,
                 rules_by_level: rules_by_level_single,
                 time_saved_pct,
             },
@@ -1009,7 +1165,7 @@ fn run_multi_pass_comparison(dataset_path: &str, taxonomy_path: &str, dataset_na
     };
 
     let filename = format!("experiments/multi_pass_comparison/{}.json", dataset_name);
-    fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+    save_to_json(&result, &filename);
 
     println!("\nMulti-pass comparison completed for {}", dataset_name);
 }
@@ -1040,8 +1196,6 @@ fn run_support_threshold_sensitivity(dataset_path: &str, taxonomy_path: &str, da
         let level_1_support = rng.gen_range(0.005..=0.8);
         let level_2_support = rng.gen_range(0.005..=level_1_support);
 
-        let start = Instant::now();
-
         let mut configs = HashMap::new();
         configs.insert(
             1,
@@ -1068,25 +1222,19 @@ fn run_support_threshold_sensitivity(dataset_path: &str, taxonomy_path: &str, da
             },
         );
 
+        // Run once (no averaging for this experiment - already has 100 iterations)
+        let start = Instant::now();
         let mut apriori = Apriori::new(dataset_path, taxonomy_path, configs).unwrap();
         let rules_by_level = apriori.mine();
-
         let total_time = start.elapsed().as_millis();
-        let num_rules = rules_by_level.values().map(|v| v.len()).sum();
 
-        let mut num_frequent_itemsets = HashMap::new();
-        num_frequent_itemsets.insert("1".to_string(), 0);
-        num_frequent_itemsets.insert("2".to_string(), 0);
-        num_frequent_itemsets.insert("3".to_string(), 0);
+        let num_rules: usize = rules_by_level.values().map(|v| v.len()).sum();
 
         results.push(SensitivityIteration {
             iteration: iter + 1,
             level_1_support,
             level_2_support,
             total_time_ms: total_time,
-            itemset_gen_time_ms: HashMap::new(),
-            rule_gen_time_ms: 0,
-            num_frequent_itemsets,
             num_rules,
         });
 
@@ -1117,7 +1265,7 @@ fn run_support_threshold_sensitivity(dataset_path: &str, taxonomy_path: &str, da
         "experiments/support_threshold_sensitivity/{}.json",
         dataset_name
     );
-    fs::write(&filename, serde_json::to_string_pretty(&result).unwrap()).unwrap();
+    save_to_json(&result, &filename);
 
     println!(
         "\nSupport threshold sensitivity completed for {}",
@@ -1135,11 +1283,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Dataset configurations
     let datasets = vec![
-        (
-            "datasets/instacart_trainFIM.txt",
-            "datasets/instacart_taxonomy.txt",
-            "instacart_train",
-        ),
+        // (
+        //     "datasets/instacart_trainFIM.txt",
+        //     "datasets/instacart_taxonomy.txt",
+        //     "instacart_train",
+        // ),
         (
             "datasets/instacart_priorFIM.txt",
             "datasets/instacart_taxonomy.txt",
