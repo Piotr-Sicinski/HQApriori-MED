@@ -22,12 +22,12 @@ let mut configs = HashMap::new();
 configs.insert(1, LevelConfig {
     support: 0.5,
     confidence: 0.2,
-    gen_rules: false,
+    gen_rules: false/true,
 });
 configs.insert(2, LevelConfig {
     support: 0.08,
     confidence: 0.2,
-    gen_rules: false,
+    gen_rules: false/true,
 });
 configs.insert(3, LevelConfig {
     support: 0.005,
