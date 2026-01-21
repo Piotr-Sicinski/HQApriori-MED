@@ -34,16 +34,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     );
 
-    // // Run on the fruithut dataset
-    // let mut apriori = Apriori::new(
-    //     "datasets/fruithut_original.txt",
-    //     "datasets/Fruithut_taxonomy_data.txt",
-    //     configs,
-    // )?;
-
     let mut apriori = Apriori::new(
-        // "datasets/instacart_trainFIM.txt",
-        "datasets/instacart_priorFIM.txt",
+        "datasets/instacart_trainFIM.txt",
         "datasets/instacart_taxonomy.txt",
         configs,
     )?;

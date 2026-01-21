@@ -107,7 +107,7 @@ def plot_parameter_sensitivity_support(dataset_name: str, base_dir: str = "exper
         
         bars1 = ax.bar(x - width/2, num_rules, width, label='Number of Rules (Level 3)', 
                        color='steelblue', alpha=0.8)
-        bars2 = ax.bar(x + width/2, scaled_times, width, label=f'Execution Time (×{scale_factor:.2f})', 
+        bars2 = ax.bar(x + width/2, scaled_times, width, label='Execution Time', 
                        color='coral', alpha=0.8)
         
         # Add value labels on bars
@@ -199,7 +199,7 @@ def plot_parameter_sensitivity_confidence(dataset_name: str, base_dir: str = "ex
     bars1 = ax.bar(x - width/2, num_rules, width, label='Number of Rules', 
                    color='steelblue', alpha=0.8)
     bars2 = ax.bar(x + width/2, scaled_times, width, 
-                   label=f'Execution Time (×{scale_factor:.2f})', 
+                   label='Execution Time', 
                    color='coral', alpha=0.8)
     
     # Add value labels on bars
@@ -278,6 +278,17 @@ def plot_record_scalability(dataset_name: str, base_dir: str = "experiments"):
             p = np.poly1d(z)
             x_trend = np.linspace(min(mults_valid), max(mults_valid), 100)
             ax.plot(x_trend, p(x_trend), '--', color='gray', linewidth=2, alpha=0.7, zorder=2)
+            
+            # Calculate average time growth factor
+            # For 2x multiplier increase, how many times does time increase?
+            time_at_mult1 = p(1.0)
+            time_at_mult2 = p(2.0)
+            growth_factor = time_at_mult2 / time_at_mult1 if time_at_mult1 > 0 else 0
+            
+            info_text = f'Podwojenie problemu → {growth_factor:.2f}× więcej czasu'
+            ax.text(0.05, 0.95, info_text, 
+                   transform=ax.transAxes, fontsize=10, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     else:
         # Just plot points if not enough data for trend
         ax.scatter(multipliers, exec_times, s=100, color='steelblue', alpha=0.7, 
@@ -341,6 +352,17 @@ def plot_attribute_scalability(dataset_name: str, base_dir: str = "experiments")
             p = np.poly1d(z)
             x_trend = np.linspace(min(mults_valid), max(mults_valid), 100)
             ax.plot(x_trend, p(x_trend), '--', color='gray', linewidth=2, alpha=0.7, zorder=2)
+            
+            # Calculate average time growth factor
+            # For 2x multiplier increase, how many times does time increase?
+            time_at_mult1 = p(1.0)
+            time_at_mult2 = p(2.0)
+            growth_factor = time_at_mult2 / time_at_mult1 if time_at_mult1 > 0 else 0
+            
+            info_text = f'Podwojenie problemu → {growth_factor:.2f}× więcej czasu'
+            ax.text(0.05, 0.95, info_text, 
+                   transform=ax.transAxes, fontsize=10, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     else:
         # Just plot points if not enough data for trend
         ax.scatter(multipliers, exec_times, s=100, color='steelblue', alpha=0.7, 
