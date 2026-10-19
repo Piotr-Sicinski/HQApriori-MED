@@ -1,0 +1,28 @@
+{
+  "experiment_type": "attribute_scalability",
+  "dataset": "instacart_prior",
+  "multiplier": 1.25,
+  "original_attributes": 9444,
+  "scaled_attributes": 11766,
+  "level_configs": {
+    "1": {
+      "support": 0.5,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "3": {
+      "support": 0.005,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "2": {
+      "support": 0.08,
+      "confidence": 0.2,
+      "gen_rules": true
+    }
+  },
+  "results": {
+    "total_time_ms": 9845,
+    "num_rules": 169
+  }
+}

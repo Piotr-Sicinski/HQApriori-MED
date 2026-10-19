@@ -1,0 +1,198 @@
+{
+  "total_time_ms": 244,
+  "levels": [
+    {
+      "level": 1,
+      "itemset_gen_time_ms": 90,
+      "rule_gen_time_ms": 0,
+      "total_time_ms": 90,
+      "num_frequent_itemsets": 1664,
+      "num_rules": 0
+    },
+    {
+      "level": 2,
+      "itemset_gen_time_ms": 120,
+      "rule_gen_time_ms": 0,
+      "total_time_ms": 120,
+      "num_frequent_itemsets": 2298,
+      "num_rules": 0
+    },
+    {
+      "level": 3,
+      "itemset_gen_time_ms": 28,
+      "rule_gen_time_ms": 0,
+      "total_time_ms": 31,
+      "num_frequent_itemsets": 125,
+      "num_rules": 15
+    }
+  ],
+  "rules_by_level": {
+    "3": [
+      {
+        "lhs": [
+          4095
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 203,
+        "count_lhs": 921,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          5034
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 122,
+        "count_lhs": 510,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          4095
+        ],
+        "rhs": [
+          2587
+        ],
+        "count_full": 253,
+        "count_lhs": 921,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          5370
+        ],
+        "rhs": [
+          4095
+        ],
+        "count_full": 138,
+        "count_lhs": 463,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          5370
+        ],
+        "rhs": [
+          2587
+        ],
+        "count_full": 145,
+        "count_lhs": 463,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          3285
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 142,
+        "count_lhs": 531,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          8551
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 114,
+        "count_lhs": 324,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          9044
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 178,
+        "count_lhs": 688,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          9067
+        ],
+        "rhs": [
+          4250
+        ],
+        "count_full": 123,
+        "count_lhs": 585,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          4250
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 187,
+        "count_lhs": 874,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          9067
+        ],
+        "rhs": [
+          4791
+        ],
+        "count_full": 175,
+        "count_lhs": 585,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          8963
+        ],
+        "rhs": [
+          2587
+        ],
+        "count_full": 200,
+        "count_lhs": 649,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          9044
+        ],
+        "rhs": [
+          5034
+        ],
+        "count_full": 143,
+        "count_lhs": 688,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          5034
+        ],
+        "rhs": [
+          9044
+        ],
+        "count_full": 143,
+        "count_lhs": 510,
+        "num_transactions": 11070
+      },
+      {
+        "lhs": [
+          4250
+        ],
+        "rhs": [
+          2587
+        ],
+        "count_full": 205,
+        "count_lhs": 874,
+        "num_transactions": 11070
+      }
+    ]
+  }
+}

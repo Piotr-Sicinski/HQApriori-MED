@@ -1,0 +1,26 @@
+{
+  "experiment_type": "parameter_sensitivity",
+  "dataset": "instacart_prior",
+  "level_tested": 3,
+  "level_configs": {
+    "3": {
+      "support": 0.001,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "2": {
+      "support": 0.08,
+      "confidence": 0.2,
+      "gen_rules": false
+    },
+    "1": {
+      "support": 0.5,
+      "confidence": 0.2,
+      "gen_rules": false
+    }
+  },
+  "results": {
+    "total_time_ms": 67989,
+    "num_rules": 622
+  }
+}

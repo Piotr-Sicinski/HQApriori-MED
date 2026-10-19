@@ -1,0 +1,28 @@
+{
+  "experiment_type": "record_scalability",
+  "dataset": "instacart_prior",
+  "multiplier": 8,
+  "original_transactions": 3214874,
+  "scaled_transactions": 25718992,
+  "level_configs": {
+    "3": {
+      "support": 0.005,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "2": {
+      "support": 0.08,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "1": {
+      "support": 0.5,
+      "confidence": 0.2,
+      "gen_rules": true
+    }
+  },
+  "results": {
+    "total_time_ms": 66262,
+    "num_rules": 105
+  }
+}

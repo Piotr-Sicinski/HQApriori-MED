@@ -1,0 +1,45 @@
+{
+  "experiment_type": "multi_pass_comparison",
+  "dataset": "instacart_train",
+  "level_configs": {
+    "1": {
+      "support": 0.5,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "3": {
+      "support": 0.005,
+      "confidence": 0.2,
+      "gen_rules": true
+    },
+    "2": {
+      "support": 0.08,
+      "confidence": 0.2,
+      "gen_rules": true
+    }
+  },
+  "results": {
+    "multi_pass": {
+      "pass_1_time_ms": 137,
+      "pass_2_time_ms": 142,
+      "pass_3_time_ms": 466,
+      "total_time_ms": 745,
+      "total_rules": 147,
+      "rules_by_level": {
+        "2": 90,
+        "3": 55,
+        "1": 2
+      }
+    },
+    "single_pass": {
+      "total_time_ms": 313,
+      "total_rules": 138,
+      "rules_by_level": {
+        "3": 53,
+        "1": 2,
+        "2": 83
+      },
+      "time_saved_pct": 57.986577181208055
+    }
+  }
+}

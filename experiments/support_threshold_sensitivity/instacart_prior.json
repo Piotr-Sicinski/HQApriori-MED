@@ -1,0 +1,716 @@
+{
+  "experiment_type": "support_threshold_sensitivity",
+  "dataset": "instacart_prior",
+  "num_iterations": 100,
+  "fixed_params": {
+    "level_3_support": 0.005,
+    "confidence": 0.2,
+    "gen_rules_config": {
+      "1": false,
+      "2": false,
+      "3": true
+    }
+  },
+  "results": [
+    {
+      "iteration": 1,
+      "level_1_support": 0.4236131401572053,
+      "level_2_support": 0.2321919043600335,
+      "total_time_ms": 18721,
+      "num_rules": 34
+    },
+    {
+      "iteration": 2,
+      "level_1_support": 0.5109897538193966,
+      "level_2_support": 0.21038213072205098,
+      "total_time_ms": 21080,
+      "num_rules": 34
+    },
+    {
+      "iteration": 3,
+      "level_1_support": 0.03230254027419009,
+      "level_2_support": 0.0163293760050267,
+      "total_time_ms": 37337,
+      "num_rules": 37
+    },
+    {
+      "iteration": 4,
+      "level_1_support": 0.5912524200408928,
+      "level_2_support": 0.5028758083320815,
+      "total_time_ms": 16723,
+      "num_rules": 16
+    },
+    {
+      "iteration": 5,
+      "level_1_support": 0.1093667168881107,
+      "level_2_support": 0.00533941061936222,
+      "total_time_ms": 50530,
+      "num_rules": 37
+    },
+    {
+      "iteration": 6,
+      "level_1_support": 0.7460553800800012,
+      "level_2_support": 0.38008470816502204,
+      "total_time_ms": 15792,
+      "num_rules": 0
+    },
+    {
+      "iteration": 7,
+      "level_1_support": 0.3155661735390005,
+      "level_2_support": 0.04875256072402721,
+      "total_time_ms": 29668,
+      "num_rules": 36
+    },
+    {
+      "iteration": 8,
+      "level_1_support": 0.4208161103720127,
+      "level_2_support": 0.09594130768419265,
+      "total_time_ms": 24121,
+      "num_rules": 34
+    },
+    {
+      "iteration": 9,
+      "level_1_support": 0.015011435273633768,
+      "level_2_support": 0.010198425068376208,
+      "total_time_ms": 32897,
+      "num_rules": 37
+    },
+    {
+      "iteration": 10,
+      "level_1_support": 0.04496757985966767,
+      "level_2_support": 0.030837062260258202,
+      "total_time_ms": 30164,
+      "num_rules": 37
+    },
+    {
+      "iteration": 11,
+      "level_1_support": 0.6774034429638095,
+      "level_2_support": 0.3396731994345649,
+      "total_time_ms": 19843,
+      "num_rules": 33
+    },
+    {
+      "iteration": 12,
+      "level_1_support": 0.407252221518019,
+      "level_2_support": 0.02852964774034914,
+      "total_time_ms": 25575,
+      "num_rules": 35
+    },
+    {
+      "iteration": 13,
+      "level_1_support": 0.2840536038714774,
+      "level_2_support": 0.12989308673013286,
+      "total_time_ms": 24218,
+      "num_rules": 34
+    },
+    {
+      "iteration": 14,
+      "level_1_support": 0.6365359788786644,
+      "level_2_support": 0.13353965796190811,
+      "total_time_ms": 22577,
+      "num_rules": 34
+    },
+    {
+      "iteration": 15,
+      "level_1_support": 0.32436212082108556,
+      "level_2_support": 0.21405464224364693,
+      "total_time_ms": 21830,
+      "num_rules": 34
+    },
+    {
+      "iteration": 16,
+      "level_1_support": 0.3420694387955559,
+      "level_2_support": 0.30448106484682097,
+      "total_time_ms": 15138,
+      "num_rules": 33
+    },
+    {
+      "iteration": 17,
+      "level_1_support": 0.7379646268161825,
+      "level_2_support": 0.6421685766594607,
+      "total_time_ms": 7064,
+      "num_rules": 0
+    },
+    {
+      "iteration": 18,
+      "level_1_support": 0.5208687820176724,
+      "level_2_support": 0.11888948651103651,
+      "total_time_ms": 10748,
+      "num_rules": 34
+    },
+    {
+      "iteration": 19,
+      "level_1_support": 0.46374180411723626,
+      "level_2_support": 0.18395832184239427,
+      "total_time_ms": 11743,
+      "num_rules": 34
+    },
+    {
+      "iteration": 20,
+      "level_1_support": 0.05805246087294779,
+      "level_2_support": 0.02772035268928555,
+      "total_time_ms": 20092,
+      "num_rules": 37
+    },
+    {
+      "iteration": 21,
+      "level_1_support": 0.7893902847574396,
+      "level_2_support": 0.48143605871155504,
+      "total_time_ms": 7323,
+      "num_rules": 0
+    },
+    {
+      "iteration": 22,
+      "level_1_support": 0.3648351155346734,
+      "level_2_support": 0.015159305127289937,
+      "total_time_ms": 26859,
+      "num_rules": 35
+    },
+    {
+      "iteration": 23,
+      "level_1_support": 0.12758693961689854,
+      "level_2_support": 0.05214333943566891,
+      "total_time_ms": 32516,
+      "num_rules": 37
+    },
+    {
+      "iteration": 24,
+      "level_1_support": 0.3956730407229003,
+      "level_2_support": 0.3834407955589506,
+      "total_time_ms": 19669,
+      "num_rules": 24
+    },
+    {
+      "iteration": 25,
+      "level_1_support": 0.6817803098720869,
+      "level_2_support": 0.3743759871208707,
+      "total_time_ms": 19895,
+      "num_rules": 24
+    },
+    {
+      "iteration": 26,
+      "level_1_support": 0.6162378257936291,
+      "level_2_support": 0.5006273630277834,
+      "total_time_ms": 16132,
+      "num_rules": 16
+    },
+    {
+      "iteration": 27,
+      "level_1_support": 0.4620609730071922,
+      "level_2_support": 0.11234915931801256,
+      "total_time_ms": 15371,
+      "num_rules": 34
+    },
+    {
+      "iteration": 28,
+      "level_1_support": 0.3096336147884524,
+      "level_2_support": 0.12495486785554075,
+      "total_time_ms": 17870,
+      "num_rules": 34
+    },
+    {
+      "iteration": 29,
+      "level_1_support": 0.18708074266618274,
+      "level_2_support": 0.04974116145593382,
+      "total_time_ms": 33036,
+      "num_rules": 37
+    },
+    {
+      "iteration": 30,
+      "level_1_support": 0.5093944524724386,
+      "level_2_support": 0.24609600750080157,
+      "total_time_ms": 19589,
+      "num_rules": 33
+    },
+    {
+      "iteration": 31,
+      "level_1_support": 0.7737839281211519,
+      "level_2_support": 0.13462440003867276,
+      "total_time_ms": 13155,
+      "num_rules": 0
+    },
+    {
+      "iteration": 32,
+      "level_1_support": 0.374823531027716,
+      "level_2_support": 0.20258455105857096,
+      "total_time_ms": 13354,
+      "num_rules": 34
+    },
+    {
+      "iteration": 33,
+      "level_1_support": 0.09311820750559247,
+      "level_2_support": 0.033963739892317,
+      "total_time_ms": 32094,
+      "num_rules": 37
+    },
+    {
+      "iteration": 34,
+      "level_1_support": 0.19948566133986886,
+      "level_2_support": 0.11553669571980024,
+      "total_time_ms": 24867,
+      "num_rules": 34
+    },
+    {
+      "iteration": 35,
+      "level_1_support": 0.5482859712795506,
+      "level_2_support": 0.037240082152460594,
+      "total_time_ms": 26560,
+      "num_rules": 35
+    },
+    {
+      "iteration": 36,
+      "level_1_support": 0.3850027376299413,
+      "level_2_support": 0.23803100625528895,
+      "total_time_ms": 22282,
+      "num_rules": 34
+    },
+    {
+      "iteration": 37,
+      "level_1_support": 0.6967624490735148,
+      "level_2_support": 0.39781378895448183,
+      "total_time_ms": 19647,
+      "num_rules": 24
+    },
+    {
+      "iteration": 38,
+      "level_1_support": 0.39122628110986135,
+      "level_2_support": 0.17785475940226056,
+      "total_time_ms": 23902,
+      "num_rules": 34
+    },
+    {
+      "iteration": 39,
+      "level_1_support": 0.744294083741154,
+      "level_2_support": 0.03507142632622208,
+      "total_time_ms": 15276,
+      "num_rules": 0
+    },
+    {
+      "iteration": 40,
+      "level_1_support": 0.3926046896399558,
+      "level_2_support": 0.29830595462495024,
+      "total_time_ms": 20564,
+      "num_rules": 33
+    },
+    {
+      "iteration": 41,
+      "level_1_support": 0.2595483212598987,
+      "level_2_support": 0.09219407910303834,
+      "total_time_ms": 26561,
+      "num_rules": 35
+    },
+    {
+      "iteration": 42,
+      "level_1_support": 0.3094616149604095,
+      "level_2_support": 0.225005282445232,
+      "total_time_ms": 22587,
+      "num_rules": 34
+    },
+    {
+      "iteration": 43,
+      "level_1_support": 0.5492254381753127,
+      "level_2_support": 0.31859055268297365,
+      "total_time_ms": 20635,
+      "num_rules": 33
+    },
+    {
+      "iteration": 44,
+      "level_1_support": 0.06822315138401609,
+      "level_2_support": 0.02977172302090648,
+      "total_time_ms": 35611,
+      "num_rules": 37
+    },
+    {
+      "iteration": 45,
+      "level_1_support": 0.5721123656118415,
+      "level_2_support": 0.5340778998213147,
+      "total_time_ms": 16331,
+      "num_rules": 16
+    },
+    {
+      "iteration": 46,
+      "level_1_support": 0.07480899979101933,
+      "level_2_support": 0.06402033771749516,
+      "total_time_ms": 31966,
+      "num_rules": 37
+    },
+    {
+      "iteration": 47,
+      "level_1_support": 0.4604232541002276,
+      "level_2_support": 0.3614447878576356,
+      "total_time_ms": 19528,
+      "num_rules": 24
+    },
+    {
+      "iteration": 48,
+      "level_1_support": 0.6122896113605705,
+      "level_2_support": 0.20087444305620855,
+      "total_time_ms": 22529,
+      "num_rules": 34
+    },
+    {
+      "iteration": 49,
+      "level_1_support": 0.13759873990382981,
+      "level_2_support": 0.11008154466693322,
+      "total_time_ms": 26082,
+      "num_rules": 35
+    },
+    {
+      "iteration": 50,
+      "level_1_support": 0.700864078569211,
+      "level_2_support": 0.2259507398672132,
+      "total_time_ms": 20023,
+      "num_rules": 33
+    },
+    {
+      "iteration": 51,
+      "level_1_support": 0.11927985488699472,
+      "level_2_support": 0.03795651648146952,
+      "total_time_ms": 24536,
+      "num_rules": 37
+    },
+    {
+      "iteration": 52,
+      "level_1_support": 0.739747065550217,
+      "level_2_support": 0.5492915059956608,
+      "total_time_ms": 12212,
+      "num_rules": 16
+    },
+    {
+      "iteration": 53,
+      "level_1_support": 0.21749955614563046,
+      "level_2_support": 0.033413989793806456,
+      "total_time_ms": 19739,
+      "num_rules": 36
+    },
+    {
+      "iteration": 54,
+      "level_1_support": 0.6755414638704547,
+      "level_2_support": 0.10774019285653562,
+      "total_time_ms": 15318,
+      "num_rules": 33
+    },
+    {
+      "iteration": 55,
+      "level_1_support": 0.3299202412145141,
+      "level_2_support": 0.13418361539703308,
+      "total_time_ms": 16893,
+      "num_rules": 34
+    },
+    {
+      "iteration": 56,
+      "level_1_support": 0.4730974981237141,
+      "level_2_support": 0.4182464013554976,
+      "total_time_ms": 14307,
+      "num_rules": 24
+    },
+    {
+      "iteration": 57,
+      "level_1_support": 0.1177248753308251,
+      "level_2_support": 0.0674962549140766,
+      "total_time_ms": 19627,
+      "num_rules": 37
+    },
+    {
+      "iteration": 58,
+      "level_1_support": 0.3813893941365399,
+      "level_2_support": 0.2966413360095092,
+      "total_time_ms": 14219,
+      "num_rules": 33
+    },
+    {
+      "iteration": 59,
+      "level_1_support": 0.4349761625319263,
+      "level_2_support": 0.3889010588918172,
+      "total_time_ms": 12642,
+      "num_rules": 24
+    },
+    {
+      "iteration": 60,
+      "level_1_support": 0.09808941374910593,
+      "level_2_support": 0.08330335142429805,
+      "total_time_ms": 17878,
+      "num_rules": 37
+    },
+    {
+      "iteration": 61,
+      "level_1_support": 0.14240875153876975,
+      "level_2_support": 0.13684182509707457,
+      "total_time_ms": 16481,
+      "num_rules": 34
+    },
+    {
+      "iteration": 62,
+      "level_1_support": 0.7914224577348166,
+      "level_2_support": 0.10879283757264707,
+      "total_time_ms": 12171,
+      "num_rules": 0
+    },
+    {
+      "iteration": 63,
+      "level_1_support": 0.7787506613449505,
+      "level_2_support": 0.693061682327188,
+      "total_time_ms": 11835,
+      "num_rules": 0
+    },
+    {
+      "iteration": 64,
+      "level_1_support": 0.1650001992712395,
+      "level_2_support": 0.08168373945326823,
+      "total_time_ms": 19205,
+      "num_rules": 37
+    },
+    {
+      "iteration": 65,
+      "level_1_support": 0.07930646661446597,
+      "level_2_support": 0.054377164273852585,
+      "total_time_ms": 19926,
+      "num_rules": 37
+    },
+    {
+      "iteration": 66,
+      "level_1_support": 0.6209544957038825,
+      "level_2_support": 0.08416126777380119,
+      "total_time_ms": 15972,
+      "num_rules": 35
+    },
+    {
+      "iteration": 67,
+      "level_1_support": 0.3181127983679262,
+      "level_2_support": 0.15274582384689692,
+      "total_time_ms": 16727,
+      "num_rules": 34
+    },
+    {
+      "iteration": 68,
+      "level_1_support": 0.665907315262557,
+      "level_2_support": 0.1379318163349457,
+      "total_time_ms": 14371,
+      "num_rules": 33
+    },
+    {
+      "iteration": 69,
+      "level_1_support": 0.051890072972991384,
+      "level_2_support": 0.00866857977466506,
+      "total_time_ms": 24551,
+      "num_rules": 37
+    },
+    {
+      "iteration": 70,
+      "level_1_support": 0.40929015483909614,
+      "level_2_support": 0.05931378262015857,
+      "total_time_ms": 16402,
+      "num_rules": 35
+    },
+    {
+      "iteration": 71,
+      "level_1_support": 0.21594837925598062,
+      "level_2_support": 0.1504102550427818,
+      "total_time_ms": 15745,
+      "num_rules": 34
+    },
+    {
+      "iteration": 72,
+      "level_1_support": 0.2555880166681412,
+      "level_2_support": 0.03281017031886708,
+      "total_time_ms": 19329,
+      "num_rules": 36
+    },
+    {
+      "iteration": 73,
+      "level_1_support": 0.1399655828079704,
+      "level_2_support": 0.10345470937394932,
+      "total_time_ms": 16532,
+      "num_rules": 35
+    },
+    {
+      "iteration": 74,
+      "level_1_support": 0.37115547970602136,
+      "level_2_support": 0.10016315887899349,
+      "total_time_ms": 8944,
+      "num_rules": 34
+    },
+    {
+      "iteration": 75,
+      "level_1_support": 0.44456727520882783,
+      "level_2_support": 0.2608126961814794,
+      "total_time_ms": 13403,
+      "num_rules": 33
+    },
+    {
+      "iteration": 76,
+      "level_1_support": 0.33253760227032897,
+      "level_2_support": 0.29318148804026845,
+      "total_time_ms": 14062,
+      "num_rules": 33
+    },
+    {
+      "iteration": 77,
+      "level_1_support": 0.39556262318657953,
+      "level_2_support": 0.01190276352828663,
+      "total_time_ms": 19358,
+      "num_rules": 35
+    },
+    {
+      "iteration": 78,
+      "level_1_support": 0.49483369277057176,
+      "level_2_support": 0.008779071661808687,
+      "total_time_ms": 17538,
+      "num_rules": 35
+    },
+    {
+      "iteration": 79,
+      "level_1_support": 0.5335473621423548,
+      "level_2_support": 0.07476725648642668,
+      "total_time_ms": 16281,
+      "num_rules": 35
+    },
+    {
+      "iteration": 80,
+      "level_1_support": 0.416500661976112,
+      "level_2_support": 0.00892786579044947,
+      "total_time_ms": 16693,
+      "num_rules": 35
+    },
+    {
+      "iteration": 81,
+      "level_1_support": 0.17725124335604667,
+      "level_2_support": 0.12294845420648844,
+      "total_time_ms": 16446,
+      "num_rules": 34
+    },
+    {
+      "iteration": 82,
+      "level_1_support": 0.7292087211007307,
+      "level_2_support": 0.3317728246612289,
+      "total_time_ms": 14814,
+      "num_rules": 33
+    },
+    {
+      "iteration": 83,
+      "level_1_support": 0.3580960345437661,
+      "level_2_support": 0.03846234782820843,
+      "total_time_ms": 18414,
+      "num_rules": 35
+    },
+    {
+      "iteration": 84,
+      "level_1_support": 0.5458707216581734,
+      "level_2_support": 0.15659225864314108,
+      "total_time_ms": 15089,
+      "num_rules": 34
+    },
+    {
+      "iteration": 85,
+      "level_1_support": 0.060934329813469676,
+      "level_2_support": 0.0574835563776007,
+      "total_time_ms": 20057,
+      "num_rules": 37
+    },
+    {
+      "iteration": 86,
+      "level_1_support": 0.25981589562041724,
+      "level_2_support": 0.053816318181534185,
+      "total_time_ms": 19567,
+      "num_rules": 36
+    },
+    {
+      "iteration": 87,
+      "level_1_support": 0.005249336831510476,
+      "level_2_support": 0.005124642784359557,
+      "total_time_ms": 33347,
+      "num_rules": 37
+    },
+    {
+      "iteration": 88,
+      "level_1_support": 0.19195537571580387,
+      "level_2_support": 0.16604903213883132,
+      "total_time_ms": 16252,
+      "num_rules": 34
+    },
+    {
+      "iteration": 89,
+      "level_1_support": 0.6844811055399908,
+      "level_2_support": 0.30280998370885337,
+      "total_time_ms": 13412,
+      "num_rules": 33
+    },
+    {
+      "iteration": 90,
+      "level_1_support": 0.3163987414494801,
+      "level_2_support": 0.30707377318154677,
+      "total_time_ms": 15485,
+      "num_rules": 33
+    },
+    {
+      "iteration": 91,
+      "level_1_support": 0.5074603217435862,
+      "level_2_support": 0.2563134837233363,
+      "total_time_ms": 13301,
+      "num_rules": 33
+    },
+    {
+      "iteration": 92,
+      "level_1_support": 0.06562404194450613,
+      "level_2_support": 0.03500491441884806,
+      "total_time_ms": 22391,
+      "num_rules": 37
+    },
+    {
+      "iteration": 93,
+      "level_1_support": 0.5650116306538018,
+      "level_2_support": 0.5522261081646083,
+      "total_time_ms": 11397,
+      "num_rules": 16
+    },
+    {
+      "iteration": 94,
+      "level_1_support": 0.42506678160502354,
+      "level_2_support": 0.3100849321755119,
+      "total_time_ms": 14039,
+      "num_rules": 33
+    },
+    {
+      "iteration": 95,
+      "level_1_support": 0.1620658256604942,
+      "level_2_support": 0.019591153850758006,
+      "total_time_ms": 20325,
+      "num_rules": 37
+    },
+    {
+      "iteration": 96,
+      "level_1_support": 0.006558702938984226,
+      "level_2_support": 0.00612950278535277,
+      "total_time_ms": 29921,
+      "num_rules": 37
+    },
+    {
+      "iteration": 97,
+      "level_1_support": 0.4869066283814267,
+      "level_2_support": 0.14756934893994253,
+      "total_time_ms": 14741,
+      "num_rules": 34
+    },
+    {
+      "iteration": 98,
+      "level_1_support": 0.5905854545329241,
+      "level_2_support": 0.16207850852824066,
+      "total_time_ms": 15303,
+      "num_rules": 34
+    },
+    {
+      "iteration": 99,
+      "level_1_support": 0.5806639105754687,
+      "level_2_support": 0.5705679550240073,
+      "total_time_ms": 12280,
+      "num_rules": 0
+    },
+    {
+      "iteration": 100,
+      "level_1_support": 0.6220486393168334,
+      "level_2_support": 0.5939280425409799,
+      "total_time_ms": 11430,
+      "num_rules": 0
+    }
+  ]
+}
